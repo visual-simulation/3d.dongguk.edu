@@ -19,6 +19,35 @@
 
         var geometry;
 
+
+        // render to texture
+        var sceneRTT;
+        var cameraRTT;
+        var quadRTT;
+
+        var rtWidth = 1024;
+        var rtHeight = 1024;
+        var rtTexture;
+
+        //
+
+        function initSceneRTT() {
+
+            sceneRTT = new THREE.Scene();
+            cameraRTT = new THREE.OrthographicCamera(rtWidth/-2, rtWidth/2, rtHeight/2, rtHeight/-2, -10000, 10000);
+            cameraRTT.position.z = 100;
+
+            rtTexture = new THREE.WebGLRenderTarget(rtWidth, rtHeight, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter, format: THREE.RGBFormat });
+
+            var material = new THREE.MeshBasicMaterial( { color:0xff00ff } );
+
+            var plane = new THREE.PlaneGeometry(rtWidth, rtHeight);
+            quadRTT = new THREE.Mesh(plane, material);
+         //   quadRTT.position.z = -100;
+
+            sceneRTT.add(quadRTT);
+        }
+
         function init() {
 
             renderer = new THREE.WebGLRenderer();
@@ -34,24 +63,27 @@
 
             scene = new THREE.Scene();
 
+
+/*
             var geometry = new THREE.BoxGeometry( 200, 200, 200 );
 
             var texture = THREE.ImageUtils.loadTexture( 'textures/crate.gif' );
             texture.anisotropy = renderer.getMaxAnisotropy();
 
-            var material = new THREE.MeshBasicMaterial( { map: texture } );
+            var material = new THREE.MeshBasicMaterial( { map: rtTexture } );
 
             mesh = new THREE.Mesh( geometry, material );
-            // scene.add( mesh );
-
+            mesh.needsUpdate = true;
+            scene.add( mesh );
+*/
             //
 
             window.addEventListener( 'resize', onWindowResize, false );
 
 
-
             // Initialize Particles
             ps = new ParticleSystem();
+            ps.initialize(renderer);
 
             var cen = new THREE.Vector3(0,0,0);
             var rad = 200;
@@ -71,19 +103,13 @@
             geometry = new THREE.BufferGeometry();
             var material = new THREE.PointCloudMaterial( { size: 4, vertexColors: THREE.VertexColors } );
 
-            var slMaterial = new THREE.RawShaderMaterial({
-
-
-
-
-            });
-
             geometry.addAttribute('position', new THREE.BufferAttribute(ps.positions));
             geometry.addDrawCall(0, ps.particleCount, 0);
 
             points = new THREE.PointCloud(geometry, material);
 
             scene.add(points);
+
         }
 
         function onWindowResize() {
@@ -99,18 +125,22 @@
 
             requestAnimationFrame( animate );
 
-            mesh.rotation.x += 0.005;
-            mesh.rotation.y += 0.01;
+            //mesh.rotation.x += 0.005;
+            //mesh.rotation.y += 0.01;
 
             points.geometry.addAttribute('position', new THREE.BufferAttribute(ps.positions, 3));
-
             ps.updateParticles(0.1);
 
+
+           // renderer.render( sceneRTT, cameraRTT, rtTexture, true);
             renderer.render( scene, camera );
+         }
 
-        }
 
+        initSceneRTT();
         init();
+
+
         animate();
 
     </script>
