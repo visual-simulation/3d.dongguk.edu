@@ -103,12 +103,7 @@ function ParticleSystem() {
 
     this.advectParticles = function(dt) {
 
-        // use gpgpu for test
-
-
-
-
-
+        renderer.render(scene, camera, target);
 
     }
 }
