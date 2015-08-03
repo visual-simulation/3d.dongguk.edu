@@ -5,13 +5,16 @@
     <title></title>
 
     <script src="./lib/three/build/three.min.js"></script>
-    <script src="./ParticleSystem.js"></script>
+    <script src="./ParticleSystemGPU.js"></script>
 
 
 </head>
 <body>
 
     <script>
+
+        var vertexShaderSource = loadShaderFile("./drawShader.vert.glsl");
+        var fragmentShaderSource = loadShaderFile("./drawShader.frag.glsl");
 
         var scene, camera, renderer;
         var mesh;
@@ -20,39 +23,11 @@
         var geometry;
 
 
-        // render to texture
-        var sceneRTT;
-        var cameraRTT;
-        var quadRTT;
-
-        var rtWidth = 1024;
-        var rtHeight = 1024;
-        var rtTexture;
-
-        //
-
-        function initSceneRTT() {
-
-            sceneRTT = new THREE.Scene();
-            cameraRTT = new THREE.OrthographicCamera(rtWidth/-2, rtWidth/2, rtHeight/2, rtHeight/-2, -10000, 10000);
-            cameraRTT.position.z = 100;
-
-            rtTexture = new THREE.WebGLRenderTarget(rtWidth, rtHeight, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter, format: THREE.RGBFormat });
-
-            var material = new THREE.MeshBasicMaterial( { color:0xff00ff } );
-
-            var plane = new THREE.PlaneGeometry(rtWidth, rtHeight);
-            quadRTT = new THREE.Mesh(plane, material);
-         //   quadRTT.position.z = -100;
-
-            sceneRTT.add(quadRTT);
-        }
-
         function init() {
 
             renderer = new THREE.WebGLRenderer();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setClearColor(0xffffff);
+            renderer.setClearColor(0xaaaaaa);
 
             document.body.appendChild(renderer.domElement);
 
@@ -62,7 +37,6 @@
             camera.position.z = 400;
 
             scene = new THREE.Scene();
-
 
 /*
             var geometry = new THREE.BoxGeometry( 200, 200, 200 );
@@ -82,13 +56,15 @@
 
 
             // Initialize Particles
-            ps = new ParticleSystem();
-            ps.initialize(renderer);
+            ps = new ParticleSystemGPU();
+            //ps.initialize(renderer);
+
+            ps.initialize(10000, renderer, camera);
 
             var cen = new THREE.Vector3(0,0,0);
             var rad = 200;
 
-            for(var i=0; i<1000; i++) {
+            for(var i=0; i<10000; i++) {
 
                 var pos = new THREE.Vector3((Math.random()-0.5)*2.0*rad, (Math.random()-0.5)*2.0*rad, (Math.random()-0.5)*2.0*rad);
                 var vel = new THREE.Vector3(0.0, 10.0, 0.0);
@@ -100,15 +76,26 @@
                 }
             }
 
+            ps.initializeShaderMaterials();
+
             geometry = new THREE.BufferGeometry();
+
             var material = new THREE.PointCloudMaterial( { size: 4, vertexColors: THREE.VertexColors } );
 
-            geometry.addAttribute('position', new THREE.BufferAttribute(ps.positions));
-            geometry.addDrawCall(0, ps.particleCount, 0);
+            var shaderMaterial = new THREE.RawShaderMaterial({
+                vertexShader : vertexShaderSource,
+                fragmentShader : fragmentShaderSource
+            });
 
-            points = new THREE.PointCloud(geometry, material);
 
-            scene.add(points);
+            points = new THREE.PointCloud(geometry);
+            //scene.add(points);
+
+            points.material = shaderMaterial;
+            points.geometry.addAttribute('position', new THREE.BufferAttribute(ps.positions,3));
+
+
+
 
         }
 
@@ -128,18 +115,21 @@
             //mesh.rotation.x += 0.005;
             //mesh.rotation.y += 0.01;
 
-            points.geometry.addAttribute('position', new THREE.BufferAttribute(ps.positions, 3));
-            ps.updateParticles(0.1);
+            //ps.updateParticles(0.1);
 
+            // renderer.render( sceneRTT, cameraRTT, rtTexture, true);
 
-           // renderer.render( sceneRTT, cameraRTT, rtTexture, true);
-            renderer.render( scene, camera );
+            //ps.advectParticles(0.01);
+
+            //points.geometry.addAttribute('position', new THREE.BufferAttribute(ps.positions, 3));
+
+            ps.assignParticles();
+            ps.drawParticles(scene, camera);
+
+            //renderer.render( scene, camera );
          }
 
-
-        initSceneRTT();
         init();
-
 
         animate();
 
