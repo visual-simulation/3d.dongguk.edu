@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+
+    <script src="./lib/three/build/three.min.js"></script>
+
+
+</head>
+<body>
+
+<script>
+
+    var renderer;
+    var gl;
+
+    var rtWidth = 1024;
+    var rtHeight = 1024;
+
+    var projMat4;
+    var transMat4;
+    var camMat4;
+
+    var squarePosBuffer;
+    var shprogram;
+
+    var fbo;
+    var tex0;
+
+    var vertexShaderSource =
+            "    attribute vec3 vertexPos;\n" +
+            "    uniform mat4 modelViewMatrix;\n" +
+            "    uniform mat4 projectionMatrix;\n" +
+            "    void main(void) {\n" +
+            "        // Return the transformed and projected vertex value\n" +
+            "        gl_Position = projectionMatrix * modelViewMatrix * vec4(vertexPos, 1.0);\n" +
+            "    }\n";
+
+    var fragmentShaderSource =
+            "    void main(void) {\n" +
+            "         // Return the pixel color: always output white\n" +
+            "         gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);\n" +
+            "   }\n";
+
+
+
+    var scene;
+    var camera;
+    var box;
+    var material;
+    var mesh;
+
+
+    function initTHREE() {
+
+        renderer = new THREE.WebGLRenderer();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0xaaaaaa);
+
+        window.addEventListener( 'resize', onWindowResize, false );
+
+        document.body.appendChild(renderer.domElement);
+
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(70, window.innerWidth, window.innerHeight, 1, 1000);
+        camera.position.z = 300;
+
+        box = new THREE.BoxGeometry(100, 100, 100);
+        material = new THREE.MeshBasicMaterial( { color : 0x0000ff} );
+
+        mesh = new THREE.Mesh(box, material);
+        mesh.needsUpdate = true;
+
+        scene.add(mesh);
+    }
+
+    function init() {
+
+        gl = renderer.context.canvas.getContext("webgl");
+
+        //
+        projMat4 = new THREE.Matrix4();
+        projMat4.makePerspective(45, rtWidth/rtHeight, 0.1, 1000);
+        //projMat4.makeOrthographic(rtWidth/-2, rtWidth/2, rtHeight/2, rtHeight/-2, -10000, 10000);
+        //
+        camMat4 = new THREE.Matrix4();
+        camMat4.lookAt(new THREE.Vector3(0,0,100), new THREE.Vector3(0,0,-10), new THREE.Vector3(0,1,0));
+
+        //
+
+        squarePosBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, squarePosBuffer);
+
+        var size = 100;
+
+        var vertices = [  size/2,  size/2, -400.0,
+                         -size/2,  size/2, -400.0,
+                          size/2, -size/2, -400.0,
+                         -size/2, -size/2, -400.0 ];
+
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+        // init shader.
+
+        var vshader = gl.createShader(gl.VERTEX_SHADER);
+        gl.shaderSource(vshader, vertexShaderSource);
+        gl.compileShader(vshader);
+
+        if(!gl.getShaderParameter(vshader, gl.COMPILE_STATUS)) {
+            alert(gl.getShaderInfoLog(vshader));
+        }
+
+        var fshader = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(fshader, fragmentShaderSource);
+        gl.compileShader(fshader);
+
+        if(!gl.getShaderParameter(fshader, gl.COMPILE_STATUS)) {
+            alert(gl.getShaderInfoLog(fshader));
+        }
+
+
+        shprogram = gl.createProgram();
+        gl.attachShader(shprogram, vshader);
+        gl.attachShader(shprogram, fshader);
+        gl.linkProgram(shprogram);
+
+        if (!gl.getProgramParameter(shprogram, gl.LINK_STATUS)) {
+            alert("Could not initialise shaders");
+        }
+
+        // frame buffer
+
+
+        tex0 = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, tex0);
+
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1024, 1024, 0, gl.RGBA, gl.FLOAT, null);
+
+        gl.bindTexture( gl.TEXTURE_2D, null );
+
+
+        fbo = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex0, 0);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+
+    }
+
+    function draw() {
+
+
+
+        mesh.rotation.x += 0.005;
+        mesh.rotation.y += 0.01;
+
+        renderer.render(scene, camera);
+
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+
+        gl.useProgram(shprogram);
+        {
+            gl.bindBuffer(gl.ARRAY_BUFFER, squarePosBuffer);
+
+            var attPos = gl.getAttribLocation(shprogram, "vertexPos");
+            gl.vertexAttribPointer(attPos, 3, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(attPos);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+
+            var mvMatrixUniform = gl.getUniformLocation(shprogram, "modelViewMatrix");
+            var projMatrixUniform = gl.getUniformLocation(shprogram, "projectionMatrix");
+
+
+            gl.uniformMatrix4fv(mvMatrixUniform, false, camMat4.elements);
+            gl.uniformMatrix4fv(projMatrixUniform, false, projMat4.elements);
+
+
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+        }
+        gl.useProgram(null);
+
+        gl.beginTransformFeedback(null);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+
+    function onWindowResize()
+
+        //rtWidth = window.innerWidth;
+        //rtHeight = window.innerHeight;
+
+        camera.aspect = window.innerWidth/window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+        //projMat4.makePerspective(45, rtWidth/rtHeight, 0.1, 1000);
+    }
+
+    function animate() {
+
+        requestAnimationFrame(animate);
+
+        draw();
+
+    }
+
+
+    initTHREE();
+    init();
+
+
+    animate();
+
+
+
+</script>
+
+</body>
+</html>

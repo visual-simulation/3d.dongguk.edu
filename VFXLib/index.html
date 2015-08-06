@@ -6,6 +6,8 @@
 
     <script src="./lib/three/build/three.min.js"></script>
     <script src="./ParticleSystemGPU.js"></script>
+    <script src="./ParticleSystemBasic.js"></script>
+
 
 
 </head>
@@ -21,6 +23,9 @@
         var ps;
 
         var geometry;
+
+
+        var particleSystem;
 
 
         function init() {
@@ -60,6 +65,10 @@
             //ps.initialize(renderer);
 
             ps.initialize(10000, renderer, camera);
+
+            particleSystem = new ParticleSystemBasic();
+            particleSystem.initialize();
+
 
             var cen = new THREE.Vector3(0,0,0);
             var rad = 200;
