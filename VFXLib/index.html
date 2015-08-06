@@ -66,12 +66,17 @@
 
             ps.initialize(10000, renderer, camera);
 
+
             particleSystem = new ParticleSystemBasic();
-            particleSystem.initialize();
+            particleSystem.initialize(1000);
 
 
             var cen = new THREE.Vector3(0,0,0);
             var rad = 200;
+
+
+            particleSystem.addParticlesFromSphere(1000, cen, rad);
+
 
             for(var i=0; i<10000; i++) {
 
@@ -104,7 +109,7 @@
             points.geometry.addAttribute('position', new THREE.BufferAttribute(ps.positions,3));
 
 
-
+            scene.add(particleSystem.getMesh());
 
         }
 
@@ -132,10 +137,12 @@
 
             //points.geometry.addAttribute('position', new THREE.BufferAttribute(ps.positions, 3));
 
-            ps.assignParticles();
-            ps.drawParticles(scene, camera);
+            //ps.assignParticles();
+            //ps.drawParticles(scene, camera);
 
-            //renderer.render( scene, camera );
+            particleSystem.updateParticles(0.1);
+
+            renderer.render( scene, camera );
          }
 
         init();
