@@ -33,6 +33,7 @@ function ParticleSystemBasic() {
     var seedVelMag;
     var seedLife;
     var seedSize;
+    var seedSpread;
 
     // render options for three.js
     var pointGeometry;
@@ -45,6 +46,7 @@ function ParticleSystemBasic() {
         seedVelMag = 1.0;
         seedLife = 100;
         seedSize = 2;
+        seedSpread = 0.2;
 
         //
 
@@ -81,6 +83,28 @@ function ParticleSystemBasic() {
         pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
     }
 
+    this.spreadVelocity = function(vel, accDir) {
+
+        if(Math.random() < 0.8) return vel;
+
+        var dir = new THREE.Vector3((Math.random()-0.5), (Math.random()-0.5), (Math.random()-0.5));
+        dir.normalize();
+
+        if(dir.dot(accDir) < 0.0) {
+            dir.multiplyScalar(-1);
+        }
+
+        var velMag = vel.length();
+        var velDir = new THREE.Vector3(vel.x, vel.y, vel.z);
+        velDir.normalize();
+
+        var spreadVel = new THREE.Vector3();
+        spreadVel.addVectors(velDir, dir.multiplyScalar(1.0));
+        spreadVel.normalize();
+        spreadVel.multiplyScalar(velMag);
+
+        return spreadVel;
+    }
 
     this.updateParticles = function(dt) {
 
@@ -100,6 +124,8 @@ function ParticleSystemBasic() {
 
                 var pos = new THREE.Vector3(positionBuffer.array[idx+0], positionBuffer.array[idx+1], positionBuffer.array[idx+2]);
                 var vel = new THREE.Vector3(velocityBuffer.array[idx+0], velocityBuffer.array[idx+1], velocityBuffer.array[idx+2]);
+
+                //vel =  _this.spreadVelocity(vel, new THREE.Vector3(0, -1, 0));
 
                 pos.addVectors(pos, vel.multiplyScalar(dt));
 
@@ -126,6 +152,8 @@ function ParticleSystemBasic() {
 
     this.addParticle = function(i, pos) {
 
+        if(i >= total) return;
+
         var dir = new THREE.Vector3((Math.random()-0.5), (Math.random()-0.5), (Math.random()-0.5));
         dir.normalize();
 
@@ -134,10 +162,11 @@ function ParticleSystemBasic() {
         }
 
         var vel = new THREE.Vector3();
-        vel.addVectors(seedVelDir, dir.multiplyScalar(1));
+        vel.addVectors(seedVelDir, dir.multiplyScalar(seedSpread));
         vel.normalize();
         vel.multiplyScalar(seedVelMag);
 
+        //
 
         var idx = i*3;
 
@@ -151,6 +180,9 @@ function ParticleSystemBasic() {
         velocityBuffer.array[idx+0] = vel.x;
         velocityBuffer.array[idx+1] = vel.y;
         velocityBuffer.array[idx+2] = vel.z;
+
+        count += 1;
+        tail = Math.max(i, tail);
     }
 
     this.addParticlesFromSphere = function(num, center, rad) {
@@ -168,14 +200,9 @@ function ParticleSystemBasic() {
                 var pos = new THREE.Vector3();
                 pos.addVectors(center, dir);
 
-
                 _this.addParticle(i, pos);
 
-
                 seed -= 1;
-
-                count += 1;
-                tail = Math.max(i, tail);
             }
 
             if(seed == 0) {

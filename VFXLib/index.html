@@ -7,13 +7,22 @@
     <script src="./lib/three/build/three.min.js"></script>
     <script src="./ParticleSystemGPU.js"></script>
     <script src="./ParticleSystemBasic.js"></script>
-
+    <script src="./lib/Stats.js"></script>
 
 
 </head>
 <body>
 
     <script>
+
+        var stats = new Stats();
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+        stats.domElement.style.width = '90px'
+        document.body.appendChild(stats.domElement);
+
+
 
         var vertexShaderSource = loadShaderFile("./drawShader.vert.glsl");
         var fragmentShaderSource = loadShaderFile("./drawShader.frag.glsl");
@@ -68,14 +77,14 @@
 
 
             particleSystem = new ParticleSystemBasic();
-            particleSystem.initialize(1000);
+            particleSystem.initialize(100000);
 
 
             var cen = new THREE.Vector3(0,0,0);
             var rad = 200;
 
 
-            particleSystem.addParticlesFromSphere(1000, cen, rad);
+            particleSystem.addParticlesFromSphere(10000, cen, rad);
 
 
             for(var i=0; i<10000; i++) {
@@ -124,25 +133,16 @@
 
         function animate() {
 
-            requestAnimationFrame( animate );
-
-            //mesh.rotation.x += 0.005;
-            //mesh.rotation.y += 0.01;
-
-            //ps.updateParticles(0.1);
-
-            // renderer.render( sceneRTT, cameraRTT, rtTexture, true);
-
-            //ps.advectParticles(0.01);
-
-            //points.geometry.addAttribute('position', new THREE.BufferAttribute(ps.positions, 3));
-
-            //ps.assignParticles();
-            //ps.drawParticles(scene, camera);
+            stats.begin();
 
             particleSystem.updateParticles(0.1);
 
             renderer.render( scene, camera );
+
+
+            stats.end();
+
+            requestAnimationFrame( animate );
          }
 
         init();
