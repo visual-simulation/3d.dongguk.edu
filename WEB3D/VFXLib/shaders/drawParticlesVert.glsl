@@ -7,7 +7,7 @@ uniform mat4 projectionMatrix;
 
 uniform sampler2D texPosition;
 
-attribute vec3 position;
+attribute vec4 position;
 attribute float locID;
 
 uniform int width;
@@ -26,7 +26,12 @@ void main() {
     vec2 loc = conv1Dto2D(int(locID), width, height);
     vec4 pos = texture2D(texPosition, vec2(loc.x, 1.0-loc.y));
 
-    gl_PointSize = 2.0;
+    if(pos.w == 2.0) {
+        gl_PointSize = 5.0;
+    }
+    else {
+        gl_PointSize = 1.0;
+    }
 
   //  if(locID > 100.0) gl_PointSize = 100.0;
 

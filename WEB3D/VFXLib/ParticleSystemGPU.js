@@ -1,16 +1,3 @@
-function stringToAscii(s)
-{
-    var ascii="";
-    if(s.length>0)
-        for(i=0; i<s.length; i++)
-        {
-            var c = ""+s.charCodeAt(i);
-            while(c.length < 3)
-                c = "0"+c;
-            ascii += c;
-        }
-    return(ascii);
-}
 
 function loadShaderFile(path) {
 
@@ -73,8 +60,12 @@ function ParticleSystemGPU() {
 
         _this.indices = new Float32Array(totalSize);
         _this.lifeTime = new Float32Array(totalSize);
-        _this.positions = new Float32Array(totalSize*3);
+        _this.positions = new Float32Array(totalSize*4);
         _this.velocities = new Float32Array(totalSize*3);
+
+        for(var i=0; i<totalSize; i++) {
+           // _this.indices[i] = i;
+        }
 
         _this.texPositions = new THREE.WebGLRenderTarget(width, height,
                 { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, type: THREE.FloatType, format: THREE.RGBAFormat });
@@ -108,10 +99,15 @@ function ParticleSystemGPU() {
 
     this.initializeTextures = function() {
 
-        _this.texData = new THREE.DataTexture(_this.positions, width, height, THREE.RGBFormat, THREE.FloatType);
-        _this.texData.minFilter = THREE.NearestFilter;
-        _this.texData.magFilter = THREE.NearestFilter;
-        _this.texData.needsUpdate = true;
+        _this.texDataPos = new THREE.DataTexture(_this.positions, width, height, THREE.RGBAFormat, THREE.FloatType);
+        _this.texDataPos.minFilter = THREE.NearestFilter;
+        _this.texDataPos.magFilter = THREE.NearestFilter;
+        _this.texDataPos.needsUpdate = true;
+
+        _this.texDataIdx = new THREE.DataTexture(_this.indices, width, height, THREE.AlphaFormat, THREE.FloatType);
+        _this.texDataIdx.minFilter = THREE.NearestFilter;
+        _this.texDataIdx.magFilter = THREE.NearestFilter;
+        _this.texDataIdx.needsUpdate = true;
 
     }
 
@@ -142,7 +138,7 @@ function ParticleSystemGPU() {
             },
             uniforms:
             {
-                texPosition : {type: 't', value: _this.texData},
+                texPosition : {type: 't', value: _this.texDataPos},
                 width : {type: 'i', value: width},
                 height : {type: 'i', value: height}
             },
@@ -203,6 +199,7 @@ function ParticleSystemGPU() {
         _this.positions[idx+0] = pos.x;
         _this.positions[idx+1] = pos.y;
         _this.positions[idx+2] = pos.z;
+        _this.positions[idx+3] = 1.0;
 
         _this.velocities[idx+0] = vel.x;
         _this.velocities[idx+1] = vel.y;
