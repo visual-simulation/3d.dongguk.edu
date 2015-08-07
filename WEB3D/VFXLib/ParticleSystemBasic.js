@@ -35,6 +35,8 @@ function ParticleSystemBasic() {
     var seedSize;
     var seedSpread;
 
+    var globalForce;
+
     // render options for three.js
     var pointGeometry;
     var pointMaterial;
@@ -42,11 +44,13 @@ function ParticleSystemBasic() {
 
     this.initialize = function(_total) {
 
-        seedVelDir = new THREE.Vector3(0, -1, 0);
-        seedVelMag = 1.0;
-        seedLife = 100;
+        seedVelDir = new THREE.Vector3(0, 0, 0);
+        seedVelMag = 0.0;
+        seedLife = 10;
         seedSize = 2;
         seedSpread = 0.2;
+
+        globalForce = new THREE.Vector3(0, -100, 0);
 
         //
 
@@ -74,36 +78,41 @@ function ParticleSystemBasic() {
                 life     : {type:'f' , value: null},
                 size     : {type:'f' , value: null}
             },
-            uniform: {
+            uniforms: {
+                color    : {type: 'c', value: new THREE.Color(0xffffff)},
+                texture  : {type: 't', value: new THREE.ImageUtils.loadTexture("./textures/spark.png")}
             },
             vertexShader  : loadFileToString("./shaders/pointCloudVert.glsl"),
-            fragmentShader: loadFileToString("./shaders/pointCloudFrag.glsl")
+            fragmentShader: loadFileToString("./shaders/pointCloudFrag.glsl"),
+            depthTest : false,
+            transparent : true,
+            side: THREE.DoubleSide
         });
 
         pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
     }
 
-    this.spreadVelocity = function(vel, accDir) {
+    this.spreadForce = function(acc) {
 
-        if(Math.random() < 0.8) return vel;
+        if(Math.random() < 0.5) return acc.clone();
 
         var dir = new THREE.Vector3((Math.random()-0.5), (Math.random()-0.5), (Math.random()-0.5));
         dir.normalize();
 
-        if(dir.dot(accDir) < 0.0) {
+        if(dir.dot(acc) < 0.0) {
             dir.multiplyScalar(-1);
         }
 
-        var velMag = vel.length();
-        var velDir = new THREE.Vector3(vel.x, vel.y, vel.z);
-        velDir.normalize();
+        var accMag = acc.length();
+        var accDir = new THREE.Vector3(acc.x, acc.y, acc.z);
+        accDir.normalize();
 
-        var spreadVel = new THREE.Vector3();
-        spreadVel.addVectors(velDir, dir.multiplyScalar(1.0));
-        spreadVel.normalize();
-        spreadVel.multiplyScalar(velMag);
+        var spreadAcc = new THREE.Vector3();
+        spreadAcc.addVectors(accDir, dir.multiplyScalar(1.0));
+        spreadAcc.normalize();
+        spreadAcc.multiplyScalar(accMag);
 
-        return spreadVel;
+        return spreadAcc;
     }
 
     this.updateParticles = function(dt) {
@@ -120,15 +129,20 @@ function ParticleSystemBasic() {
 
                 var idx = i*3;
 
-                lifeBuffer[i] -= dt;
+                lifeBuffer.array[i] -= dt;
 
                 var pos = new THREE.Vector3(positionBuffer.array[idx+0], positionBuffer.array[idx+1], positionBuffer.array[idx+2]);
                 var vel = new THREE.Vector3(velocityBuffer.array[idx+0], velocityBuffer.array[idx+1], velocityBuffer.array[idx+2]);
 
-                //vel =  _this.spreadVelocity(vel, new THREE.Vector3(0, -1, 0));
+                var force = _this.spreadForce(globalForce);
+
+                vel.addVectors(vel, force.multiplyScalar(dt));
+
+                velocityBuffer.array[idx+0] = vel.x;
+                velocityBuffer.array[idx+1] = vel.y;
+                velocityBuffer.array[idx+2] = vel.z;
 
                 pos.addVectors(pos, vel.multiplyScalar(dt));
-
 
                 positionBuffer.array[idx+0] = pos.x;
                 positionBuffer.array[idx+1] = pos.y;
@@ -144,6 +158,9 @@ function ParticleSystemBasic() {
         velocityBuffer.needsUpdate = true;
         lifeBuffer.needsUpdate     = true;
         sizeBuffer.needsUpdate     = true;
+
+        pointGeometry.computeBoundingBox();
+        pointGeometry.computeBoundingSphere();
 
         pointMesh.geometry.drawcalls.pop();
         pointMesh.geometry.addDrawCall(0,tail+1,0);
