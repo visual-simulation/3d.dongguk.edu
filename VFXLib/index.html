@@ -5,15 +5,17 @@
     <title></title>
 
     <script src="./lib/three/build/three.min.js"></script>
+    <script src="./lib/three/examples/js/controls/TrackballControls.js"></script>
     <script src="./ParticleSystemGPU.js"></script>
     <script src="./ParticleSystemBasic.js"></script>
     <script src="./lib/Stats.js"></script>
-
 
 </head>
 <body>
 
     <script>
+
+        var clock = new THREE.Clock();
 
         var stats = new Stats();
         stats.domElement.style.position = 'absolute';
@@ -24,14 +26,8 @@
 
 
 
-        var vertexShaderSource = loadShaderFile("./drawShader.vert.glsl");
-        var fragmentShaderSource = loadShaderFile("./drawShader.frag.glsl");
-
         var scene, camera, renderer;
-        var mesh;
-        var ps;
-
-        var geometry;
+        var controls;
 
 
         var particleSystem;
@@ -47,75 +43,34 @@
 
             //
 
-            camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
-            camera.position.z = 400;
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100000 );
+            camera.position.z = 200;
+
+            controls = new THREE.TrackballControls( camera );
+
+            controls.rotateSpeed = 10.0;
+            controls.zoomSpeed = 5;
+            controls.panSpeed = 2;
+
+            controls.noZoom = false;
+            controls.noPan = false;
+
+            controls.staticMoving = true;
+            controls.dynamicDampingFactor = 0.3;
+
+
+
 
             scene = new THREE.Scene();
 
-/*
-            var geometry = new THREE.BoxGeometry( 200, 200, 200 );
-
-            var texture = THREE.ImageUtils.loadTexture( 'textures/crate.gif' );
-            texture.anisotropy = renderer.getMaxAnisotropy();
-
-            var material = new THREE.MeshBasicMaterial( { map: rtTexture } );
-
-            mesh = new THREE.Mesh( geometry, material );
-            mesh.needsUpdate = true;
-            scene.add( mesh );
-*/
-            //
 
             window.addEventListener( 'resize', onWindowResize, false );
 
-
-            // Initialize Particles
-            ps = new ParticleSystemGPU();
-            //ps.initialize(renderer);
-
-            ps.initialize(10000, renderer, camera);
 
 
             particleSystem = new ParticleSystemBasic();
             particleSystem.initialize(100000);
 
-
-            var cen = new THREE.Vector3(0,0,0);
-            var rad = 200;
-
-
-            particleSystem.addParticlesFromSphere(10000, cen, rad);
-
-
-            for(var i=0; i<10000; i++) {
-
-                var pos = new THREE.Vector3((Math.random()-0.5)*2.0*rad, (Math.random()-0.5)*2.0*rad, (Math.random()-0.5)*2.0*rad);
-                var vel = new THREE.Vector3(0.0, 10.0, 0.0);
-
-                if(pos.distanceTo(cen) < rad) {
-
-                   ps.addParticle(pos, vel);
-
-                }
-            }
-
-            ps.initializeShaderMaterials();
-
-            geometry = new THREE.BufferGeometry();
-
-            var material = new THREE.PointCloudMaterial( { size: 4, vertexColors: THREE.VertexColors } );
-
-            var shaderMaterial = new THREE.RawShaderMaterial({
-                vertexShader : vertexShaderSource,
-                fragmentShader : fragmentShaderSource
-            });
-
-
-            points = new THREE.PointCloud(geometry);
-            //scene.add(points);
-
-            points.material = shaderMaterial;
-            points.geometry.addAttribute('position', new THREE.BufferAttribute(ps.positions,3));
 
 
             scene.add(particleSystem.getMesh());
@@ -129,14 +84,21 @@
 
             renderer.setSize( window.innerWidth, window.innerHeight );
 
+            controls.handleResize();
         }
 
         function animate() {
 
             stats.begin();
 
-            particleSystem.updateParticles(0.1);
+            var cen = new THREE.Vector3(0,0,0);
+            var rad = 20;
 
+            particleSystem.addParticlesFromSphere(3, cen, rad);
+
+            particleSystem.updateParticles(clock.getDelta());
+
+            controls.update();
             renderer.render( scene, camera );
 
 
