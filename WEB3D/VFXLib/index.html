@@ -25,7 +25,6 @@
         document.body.appendChild(stats.domElement);
 
 
-
         var scene, camera, renderer;
         var controls;
 
@@ -59,8 +58,6 @@
             controls.dynamicDampingFactor = 0.3;
 
 
-
-
             scene = new THREE.Scene();
 
 
@@ -70,6 +67,9 @@
 
             particleSystem = new ParticleSystemBasic();
             particleSystem.initialize(100000);
+
+
+
 
 
 
@@ -91,10 +91,12 @@
 
             stats.begin();
 
-            var cen = new THREE.Vector3(0,0,0);
-            var rad = 20;
 
-            particleSystem.addParticlesFromSphere(3, cen, rad);
+            var cen = new THREE.Vector3(0,0,0);
+            var rad = 50;
+
+            particleSystem.addParticlesFromSphere(100, cen, rad);
+
 
             particleSystem.updateParticles(clock.getDelta());
 
