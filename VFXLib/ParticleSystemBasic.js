@@ -44,13 +44,13 @@ function ParticleSystemBasic() {
 
     this.initialize = function(_total) {
 
-        seedVelDir = new THREE.Vector3(0, 0, 0);
-        seedVelMag = 0.0;
+        seedVelDir = new THREE.Vector3(1, 0, 0);
+        seedVelMag = 300.0;
         seedLife = 10;
-        seedSize = 2;
-        seedSpread = 0.2;
+        seedSize = 50;
+        seedSpread = 0.3;
 
-        globalForce = new THREE.Vector3(0, -100, 0);
+        globalForce = new THREE.Vector3(0, -150, 0);
 
         //
 
@@ -80,13 +80,12 @@ function ParticleSystemBasic() {
             },
             uniforms: {
                 color    : {type: 'c', value: new THREE.Color(0xffffff)},
-                texture  : {type: 't', value: new THREE.ImageUtils.loadTexture("./textures/spark.png")}
+                texture  : {type: 't', value: new THREE.ImageUtils.loadTexture("./textures/ball.png")}
             },
             vertexShader  : loadFileToString("./shaders/pointCloudVert.glsl"),
             fragmentShader: loadFileToString("./shaders/pointCloudFrag.glsl"),
-            depthTest : false,
-            transparent : true,
-            side: THREE.DoubleSide
+            blending : THREE.NormalBlending,
+            transparent : true
         });
 
         pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
@@ -94,7 +93,9 @@ function ParticleSystemBasic() {
 
     this.spreadForce = function(acc) {
 
-        if(Math.random() < 0.5) return acc.clone();
+        //if(Math.random() < 0.3) return acc.clone();
+
+        return acc.clone();
 
         var dir = new THREE.Vector3((Math.random()-0.5), (Math.random()-0.5), (Math.random()-0.5));
         dir.normalize();
@@ -108,7 +109,7 @@ function ParticleSystemBasic() {
         accDir.normalize();
 
         var spreadAcc = new THREE.Vector3();
-        spreadAcc.addVectors(accDir, dir.multiplyScalar(1.0));
+        spreadAcc.addVectors(accDir, dir.multiplyScalar(2));
         spreadAcc.normalize();
         spreadAcc.multiplyScalar(accMag);
 
@@ -149,6 +150,9 @@ function ParticleSystemBasic() {
                 positionBuffer.array[idx+2] = pos.z;
 
             }
+            else {
+                sizeBuffer.array[i] = 0.0;
+            }
         }
 
         count = validCount;
@@ -188,7 +192,7 @@ function ParticleSystemBasic() {
         var idx = i*3;
 
         lifeBuffer.array[i] = seedLife;
-        sizeBuffer.array[i] = seedSize;
+        sizeBuffer.array[i] = Math.random()*seedSize;
 
         positionBuffer.array[idx+0] = pos.x;
         positionBuffer.array[idx+1] = pos.y;
