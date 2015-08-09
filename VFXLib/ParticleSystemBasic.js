@@ -1,4 +1,5 @@
 
+
 function loadFileToString(path) {
 
     var client = new XMLHttpRequest();
@@ -42,6 +43,10 @@ function ParticleSystemBasic() {
     var pointGeometry;
     var pointMaterial;
     var pointMesh;
+
+    // interaction objects
+    var sphereObject;
+    var planeObject;
 
     this.initialize = function(_total) {
 
@@ -98,7 +103,16 @@ function ParticleSystemBasic() {
         });
 
         pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
-    }
+
+        //
+
+        sphereObject = new SphereObject();
+        sphereObject.initialize(new THREE.Vector3(700, -200, 0), 300);
+
+        planeObject = new PlaneObject();
+        planeObject.initialize(new THREE.Vector3(0, -1500, 0), new THREE.Vector3(0, 1, 0));
+
+}
 
     this.spreadForce = function(acc) {
 
@@ -147,12 +161,18 @@ function ParticleSystemBasic() {
                 var force = _this.spreadForce(globalForce);
 
                 vel.addVectors(vel, force.multiplyScalar(dt));
+                pos.addVectors(pos, vel.clone().multiplyScalar(dt));
+
+                //
+
+                sphereObject.collide(pos, vel);
+                planeObject.collide(pos, vel);
+
+                //
 
                 velocityBuffer.array[idx+0] = vel.x;
                 velocityBuffer.array[idx+1] = vel.y;
                 velocityBuffer.array[idx+2] = vel.z;
-
-                pos.addVectors(pos, vel.multiplyScalar(dt));
 
                 positionBuffer.array[idx+0] = pos.x;
                 positionBuffer.array[idx+1] = pos.y;
