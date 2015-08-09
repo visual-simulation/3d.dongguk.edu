@@ -23,6 +23,7 @@ function ParticleSystemBasic() {
     var velocityBuffer;
     var lifeBuffer;
     var sizeBuffer;
+    var opacityBuffer;
 
     var total;
     var count;
@@ -47,10 +48,10 @@ function ParticleSystemBasic() {
         seedVelDir = new THREE.Vector3(1, 0, 0);
         seedVelMag = 300.0;
         seedLife = 10;
-        seedSize = 50;
-        seedSpread = 0.3;
+        seedSize = 200;
+        seedSpread = 0.5;
 
-        globalForce = new THREE.Vector3(0, -150, 0);
+        globalForce = new THREE.Vector3(0, -300, 0);
 
         //
 
@@ -62,6 +63,7 @@ function ParticleSystemBasic() {
         velocityBuffer = new THREE.BufferAttribute(new Float32Array(total*3),3);
         lifeBuffer     = new THREE.BufferAttribute(new Float32Array(total*1),1);
         sizeBuffer     = new THREE.BufferAttribute(new Float32Array(total*1),1);
+        opacityBuffer  = new THREE.BufferAttribute(new Float32Array(total*1),1);
 
         // initialize three.js Mesh
         pointGeometry = new THREE.BufferGeometry();
@@ -70,21 +72,28 @@ function ParticleSystemBasic() {
         pointGeometry.addAttribute('velocity', velocityBuffer);
         pointGeometry.addAttribute('life'    , lifeBuffer);
         pointGeometry.addAttribute('size'    , sizeBuffer);
+        pointGeometry.addAttribute('opacity' , opacityBuffer);
+
+
+        var tex = new THREE.ImageUtils.loadTexture("./textures/white_water.png");
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
 
         pointMaterial = new THREE.ShaderMaterial({
             attributes: {
                 position : {type:'v3', value: null},
                 velocity : {type:'v3', value: null},
                 life     : {type:'f' , value: null},
-                size     : {type:'f' , value: null}
+                size     : {type:'f' , value: null},
+                opacity  : {type:'f' , value: null}
             },
             uniforms: {
-                color    : {type: 'c', value: new THREE.Color(0xffffff)},
-                texture  : {type: 't', value: new THREE.ImageUtils.loadTexture("./textures/ball.png")}
+                color    : {type: 'c', value: new THREE.Color(0x0000aa)},
+                texture  : {type: 't', value: tex},
+                maxLife  : {type: 'f', value: seedLife}
             },
             vertexShader  : loadFileToString("./shaders/pointCloudVert.glsl"),
             fragmentShader: loadFileToString("./shaders/pointCloudFrag.glsl"),
-            blending : THREE.NormalBlending,
             transparent : true
         });
 
@@ -93,7 +102,7 @@ function ParticleSystemBasic() {
 
     this.spreadForce = function(acc) {
 
-        //if(Math.random() < 0.3) return acc.clone();
+        if(Math.random() < 0.3) return acc.clone();
 
         return acc.clone();
 
@@ -151,6 +160,7 @@ function ParticleSystemBasic() {
 
             }
             else {
+                lifeBuffer.array[i] = 0.0;
                 sizeBuffer.array[i] = 0.0;
             }
         }
@@ -191,8 +201,9 @@ function ParticleSystemBasic() {
 
         var idx = i*3;
 
-        lifeBuffer.array[i] = seedLife;
+        lifeBuffer.array[i] = Math.random()*seedLife;
         sizeBuffer.array[i] = Math.random()*seedSize;
+        opacityBuffer.array[i] = 1.0;
 
         positionBuffer.array[idx+0] = pos.x;
         positionBuffer.array[idx+1] = pos.y;

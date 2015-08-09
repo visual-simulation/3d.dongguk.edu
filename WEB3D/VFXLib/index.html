@@ -41,9 +41,8 @@
             document.body.appendChild(renderer.domElement);
 
             //
-
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100000 );
-            camera.position.z = 200;
+            camera.position.z = 2000;
 
             controls = new THREE.TrackballControls( camera );
 
@@ -60,20 +59,23 @@
 
             scene = new THREE.Scene();
 
-
             window.addEventListener( 'resize', onWindowResize, false );
-
-
 
             particleSystem = new ParticleSystemBasic();
             particleSystem.initialize(100000);
 
-
-
-
-
-
             scene.add(particleSystem.getMesh());
+
+
+        var sphereGeometry = new THREE.SphereGeometry( 300, 32, 16 );
+        var sphereMaterial = new THREE.MeshLambertMaterial( { color: 0xff0000} );
+
+        var sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        sphereMesh.position.x = 500;
+        sphereMesh.position.y = -200;
+
+
+        scene.add(sphereMesh);
 
         }
 
@@ -92,15 +94,18 @@
             stats.begin();
 
 
-            var cen = new THREE.Vector3(0,0,0);
+            var cen = new THREE.Vector3(0,500,0);
             var rad = 50;
 
-            particleSystem.addParticlesFromSphere(100, cen, rad);
+            particleSystem.addParticlesFromSphere(10, cen, rad);
 
 
             particleSystem.updateParticles(clock.getDelta());
 
             controls.update();
+
+            renderer.clear();
+            renderer.clearDepth();
             renderer.render( scene, camera );
 
 

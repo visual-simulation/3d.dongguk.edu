@@ -3,20 +3,19 @@ precision mediump int;
 
 uniform vec3 color;
 uniform sampler2D texture;
+uniform float maxLife;
+
+varying float vOpacity;
+varying float vLife;
 
 
 void main() {
 
-    //gl_FragColor = vec4(1.0, 0.0, 0.0, 0.1);
     vec4 c = texture2D(texture, gl_PointCoord);
+    if(c.w < 0.01) discard;
 
-   // if(c.w < 0.1) discard;
+    vec3 glColor = vec3(c.x, c.y, c.z) * color;
 
-    gl_FragColor = c;
-
-
-
-    //gl_FragColor.w *= 0.1;
-
-
+    float a = vLife/maxLife;
+    gl_FragColor = vec4(glColor, c.w*a);
 }
