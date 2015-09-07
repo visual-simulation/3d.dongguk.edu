@@ -44,15 +44,17 @@ function ParticleSystemBasic() {
     var pointMaterial;
     var pointMesh;
 
+    var basicMaterial;
+
     // interaction objects
     var sphereObject;
     var planeObject;
 
     this.initialize = function(_total) {
 
-        seedVelDir = new THREE.Vector3(1, 0, 0);
-        seedVelMag = 300.0;
-        seedLife = 10;
+        seedVelDir = new THREE.Vector3(0, -1, 0);
+        seedVelMag = 3000.0;
+        seedLife = 1000;
         seedSize = 200;
         seedSpread = 0.5;
 
@@ -102,7 +104,13 @@ function ParticleSystemBasic() {
             transparent : true
         });
 
-        pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
+        basicMaterial = new THREE.PointCloudMaterial({
+            color: 0x0000ff
+        });
+
+        basicMaterial.size = 5.0;
+
+        pointMesh = new THREE.PointCloud(pointGeometry, basicMaterial);
 
         //
 
@@ -112,7 +120,7 @@ function ParticleSystemBasic() {
         planeObject = new PlaneObject();
         planeObject.initialize(new THREE.Vector3(0, -1500, 0), new THREE.Vector3(0, 1, 0));
 
-}
+    }
 
     this.spreadForce = function(acc) {
 
@@ -165,8 +173,18 @@ function ParticleSystemBasic() {
 
                 //
 
-                sphereObject.collide(pos, vel);
-                planeObject.collide(pos, vel);
+                var spTime = 0.1;
+
+                if(sphereObject.collide(pos, vel) == true) {
+                    if(lifeBuffer.array[i] > spTime) {
+                        lifeBuffer.array[i] = spTime;
+                    }
+                }
+                if(planeObject.collide(pos, vel) == true) {
+                    if(lifeBuffer.array[i] > spTime) {
+                        lifeBuffer.array[i] = spTime;
+                    }
+                }
 
                 //
 
@@ -241,7 +259,7 @@ function ParticleSystemBasic() {
 
         var seed = num;
 
-        for(var i=0; i < total; i++) {
+        for(var i=0; i<total; i++) {
 
             if(lifeBuffer.array[i] <= 0.0) {
 
@@ -251,6 +269,47 @@ function ParticleSystemBasic() {
 
                 var pos = new THREE.Vector3();
                 pos.addVectors(center, dir);
+
+                _this.addParticle(i, pos);
+
+                seed -= 1;
+            }
+
+            if(seed == 0) {
+                break;
+            }
+        }
+    }
+
+    this.addParticlesFromDisk = function(num, center, normal, rad) {
+
+        var seed = num;
+
+        for(var i=0; i<total; i++) {
+
+            if(lifeBuffer.array[i] <= 0.0) {
+
+                var dir = new THREE.Vector3((Math.random() - 0.5), (Math.random() - 0.5), (Math.random() - 0.5));
+                dir.normalize();
+                dir.multiplyScalar(rad);
+
+                var pos = new THREE.Vector3();
+                pos.addVectors(center, dir);
+
+                //
+
+                var deviation = new THREE.Vector3();
+                deviation.subVectors(pos, center);
+
+                var nor = normal.clone();
+                nor.normalize();
+
+                var dot = nor.dot(deviation);
+                nor.multiplyScalar(dot);
+
+                pos.subVectors(pos, nor);
+
+                //
 
                 _this.addParticle(i, pos);
 
