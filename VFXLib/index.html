@@ -9,6 +9,8 @@
 
     <script src="./SphereObject.js"></script>
     <script src="./PlaneObject.js"></script>
+    <script src="./Grid.js"></script>
+    <script src="./ObjectField.js"></script>
 
     <script src="./ParticleSystemGPU.js"></script>
     <script src="./ParticleSystemBasic.js"></script>
@@ -27,6 +29,17 @@
         stats.domElement.style.top = '0px';
         stats.domElement.style.width = '90px'
         document.body.appendChild(stats.domElement);
+
+
+        var grid = new Grid();
+        grid.initialize(10, 10, 10, new THREE.Vector3(-1000.0, -1000.0, -1000.0), new THREE.Vector3(1000.0, 1000.0, 1000.0));
+
+        var field = new ObjectField();
+        field.initialize(grid);
+
+
+        var idx = grid.getCellIndex(new THREE.Vector3(0,0,0));
+
 
 
         var scene, camera, renderer;
@@ -80,6 +93,12 @@
 
 
 
+            //
+
+            field.addMesh(sphereMesh);
+            //
+
+
             var plane = new THREE.Mesh(
                     new THREE.PlaneBufferGeometry( 7000, 7000 ),
                     new THREE.MeshPhongMaterial( { color: 0x999999, specular: 0x101010 } )
@@ -90,6 +109,7 @@
 
 
             scene.add(sphereMesh);
+            scene.add(grid.getMesh());
 
 
             // Lights
@@ -143,9 +163,12 @@
 
 
             var cen = new THREE.Vector3(0,500,0);
+            var nor = new THREE.Vector3(1,0,0);
             var rad = 50;
 
-            particleSystem.addParticlesFromSphere(100, cen, rad);
+
+            //particleSystem.addParticlesFromSphere(100, cen, rad);
+            particleSystem.addParticlesFromDisk(100, cen, nor, rad);
 
 
             particleSystem.updateParticles(clock.getDelta());

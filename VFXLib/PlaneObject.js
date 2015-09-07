@@ -35,7 +35,11 @@ function PlaneObject() {
 
                 vel.addVectors(norVel.multiplyScalar(0.2), tanVel.multiplyScalar(1.0));
             }
+
+            return true;
         }
+
+        return false;
     }
 
 }

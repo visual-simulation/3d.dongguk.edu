@@ -35,6 +35,10 @@ function SphereObject() {
 
                 vel.addVectors(norVel.multiplyScalar(0.0), tanVel.multiplyScalar(1.0));
             }
+
+            return true;
         }
+
+        return false;
     }
 }
