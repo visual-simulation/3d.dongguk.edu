@@ -42,6 +42,7 @@ function ParticleSystemBasic() {
     var seedSpread;
 
     var globalForce;
+    var windStrength = 40;
 
     // render options for three.js
     var pointGeometry;
@@ -53,6 +54,43 @@ function ParticleSystemBasic() {
     // interaction objects
     var sphereObject;
     var planeObject;
+
+    this.setParameters = function(params) {
+
+        // params is JSON type
+        if(params.seedVelDir != undefined) {
+            seedVelDir = params.seedVelDir.clone();
+        }
+
+        if(params.seedVelMag != undefined) {
+            seedVelMag = params.seedVelMag;
+        }
+
+        if(params.seedLife != undefined) {
+            seedLife = params.seedLife;
+        }
+
+        if(params.seedSize != undefined) {
+            seedSize = params.seedSize;
+        }
+
+        if(params.seedSpread != undefined) {
+            seedSpread = params.seedSpread;
+        }
+
+        if(params.globalForce != undefined) {
+            globalForce = params.globalForce.clone();
+        }
+
+        if(params.windStrength != undefined) {
+            windStrength = params.windStrength;
+        }
+
+        if(params.tex != undefined) {
+            tex = params.tex.clone();
+        }
+
+    }
 
     this.initialize = function(_total) {
 
@@ -188,16 +226,15 @@ function ParticleSystemBasic() {
 
                 var force = _this.spreadForce(globalForce);
 
+                if(windStrength > 0.0) {
 
-                var vx = noiseGen0.noise3d(pos.x/500, pos.z/500, n*0.01);
-                var vy = noiseGen1.noise3d(pos.x/500, pos.z/500, n*0.01);
-                var vz = noiseGen2.noise3d(pos.x/500, pos.z/500, n*0.01);
+                    var vx = noiseGen0.noise3d(pos.x/500, pos.z/500, n*0.01);
+                    var vy = noiseGen1.noise3d(pos.x/500, pos.z/500, n*0.01);
+                    var vz = noiseGen2.noise3d(pos.x/500, pos.z/500, n*0.01);
 
-
-                var wind = new THREE.Vector3(vx, vy, vz);
-
-
-                vel.addVectors(vel, wind.multiplyScalar(30.0));
+                    var wind = new THREE.Vector3(vx, vy, vz);
+                    vel.addVectors(vel, wind.multiplyScalar(windStrength)); // wind strength
+                }
 
 
                 vel.addVectors(vel, force.multiplyScalar(dt));

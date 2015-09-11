@@ -12,9 +12,12 @@
     <script src="./Grid.js"></script>
     <script src="./ObjectField.js"></script>
 
+    <script src="./NoiseGenerator.js"></script>
+
     <script src="./ParticleSystemGPU.js"></script>
     <script src="./ParticleSystemBasic.js"></script>
     <script src="./lib/Stats.js"></script>
+    <script src="./dat.gui.min.js"></script>
 
 </head>
 <body>
@@ -48,6 +51,16 @@
 
         var particleSystem;
 
+
+        var gui, ParamConfig = {
+            seedVelDir : new THREE.Vector3(0.7, -2, 0),
+            seedVelMag : 500.0,
+            seedLife : 1000,
+            seedSize : 200,
+            seedSpread : 0.15,
+            colorBase : new THREE.Color(0Xfffafa),
+            tex : THREE.ImageUtils.loadTexture("./textures/snowflake.png")
+        };
 
         function init() {
 
@@ -119,6 +132,27 @@
             addShadowedLight( 1, 1, 1, 0xffffff, 1.35 );
             addShadowedLight( 0.5, 1, -1, 0xffaa00, 1 );
 
+            gui = new dat.GUI();
+
+            gui.add(ParamConfig, 'seedVelMag', 200, 1000).onChange(function(value){
+                var velMag = {seedVelMag : value};
+                particleSystem.setParameters(velMag);
+            });
+
+            gui.add(ParamConfig, 'seedLife', 1, 2000).onChange(function(value){
+                var life = {seedLife : value};
+                particleSystem.setParameters(life);
+            });
+
+            gui.add(ParamConfig, 'seedSize', 100, 1000).onChange(function(value){
+                var seed = {seedSize : value};
+                particleSystem.setParameters(seed);
+            });
+
+            gui.add(ParamConfig, 'seedSpread', 0.1, 4.0).onChange(function(value){
+                var spread = {seedSpread : value};
+                particleSystem.setParameters(spread);
+            });
         }
 
         function addShadowedLight( x, y, z, color, intensity ) {
