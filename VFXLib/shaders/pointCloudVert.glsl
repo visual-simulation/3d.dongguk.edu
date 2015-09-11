@@ -11,8 +11,6 @@ varying float vLife;
 
 void main() {
 
-    //gl_PointSize = size;
-
     vOpacity = opacity;
     vLife = life;
 

@@ -20,6 +20,10 @@ function ParticleSystemBasic() {
 
     var _this = this;
 
+    var noiseGen0 = new SimplexNoise();
+    var noiseGen1 = new SimplexNoise();
+    var noiseGen2 = new SimplexNoise();
+
     var positionBuffer;
     var velocityBuffer;
     var lifeBuffer;
@@ -52,13 +56,18 @@ function ParticleSystemBasic() {
 
     this.initialize = function(_total) {
 
-        seedVelDir = new THREE.Vector3(0, -1, 0);
-        seedVelMag = 3000.0;
-        seedLife = 1000;
-        seedSize = 200;
-        seedSpread = 0.5;
+        //noiseGen0.seed(0.23);
+        //noiseGen1.seed(0.45);
+        //noiseGen2.seed(0.94);
+        //noise.seed(Math.random());
 
-        globalForce = new THREE.Vector3(0, -300, 0);
+        seedVelDir = new THREE.Vector3(0, 1, 0);
+        seedVelMag = 600.0;
+        seedLife = 3;
+        seedSize = 600;
+        seedSpread = 0.2;
+
+        globalForce = new THREE.Vector3(0, 50, 0);
 
         //
 
@@ -82,7 +91,7 @@ function ParticleSystemBasic() {
         pointGeometry.addAttribute('opacity' , opacityBuffer);
 
 
-        var tex = new THREE.ImageUtils.loadTexture("./textures/white_water.png");
+        var tex = new THREE.ImageUtils.loadTexture("./textures/flame.png");
         tex.minFilter = THREE.LinearFilter;
         tex.magFilter = THREE.LinearFilter;
 
@@ -101,16 +110,23 @@ function ParticleSystemBasic() {
             },
             vertexShader  : loadFileToString("./shaders/pointCloudVert.glsl"),
             fragmentShader: loadFileToString("./shaders/pointCloudFrag.glsl"),
-            transparent : true
+            transparent : true,
+            depthTest : true,
+            depthWrite : false,
+            blending : THREE.CustomBlending,
+            blendEquation : THREE.AddEquation,
+            blendSrc : THREE.SrcAlphaFactor,
+            blendDst : THREE.OneFactor
         });
 
         basicMaterial = new THREE.PointCloudMaterial({
             color: 0x0000ff
         });
 
-        basicMaterial.size = 5.0;
+        basicMaterial.size = 10.0;
 
-        pointMesh = new THREE.PointCloud(pointGeometry, basicMaterial);
+        pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
+
 
         //
 
@@ -152,6 +168,10 @@ function ParticleSystemBasic() {
         var validCount = 0;
         var validTail = -1;
 
+        var d = new Date();
+        var n = d.getTime();
+
+
         for(var i=0; i<=tail; i++) {
 
             if(lifeBuffer.array[i] > 0.0) {
@@ -167,6 +187,18 @@ function ParticleSystemBasic() {
                 var vel = new THREE.Vector3(velocityBuffer.array[idx+0], velocityBuffer.array[idx+1], velocityBuffer.array[idx+2]);
 
                 var force = _this.spreadForce(globalForce);
+
+
+                var vx = noiseGen0.noise3d(pos.x/500, pos.z/500, n*0.01);
+                var vy = noiseGen1.noise3d(pos.x/500, pos.z/500, n*0.01);
+                var vz = noiseGen2.noise3d(pos.x/500, pos.z/500, n*0.01);
+
+
+                var wind = new THREE.Vector3(vx, vy, vz);
+
+
+                vel.addVectors(vel, wind.multiplyScalar(30.0));
+
 
                 vel.addVectors(vel, force.multiplyScalar(dt));
                 pos.addVectors(pos, vel.clone().multiplyScalar(dt));

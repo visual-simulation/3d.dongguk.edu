@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+
+    <script src="./lib/three/build/three.min.js"></script>
+    <script src="./lib/three/examples/js/controls/TrackballControls.js"></script>
+
+    <script src="./SphereObject.js"></script>
+    <script src="./PlaneObject.js"></script>
+    <script src="./Grid.js"></script>
+    <script src="./ObjectField.js"></script>
+
+
+    <script src="./NoiseGenerator.js"></script>
+
+
+    <script src="./ParticleSystemGPU.js"></script>
+    <script src="./ParticleSystemBasic.js"></script>
+    <script src="./lib/Stats.js"></script>
+
+    <script src="./Noise.js"></script>
+
+</head>
+<body>
+
+<script>
+
+    //noise.seed(Math.random());
+
+    var clock = new THREE.Clock();
+
+    var stats = new Stats();
+    stats.domElement.style.position = 'absolute';
+    stats.domElement.style.left = '0px';
+    stats.domElement.style.top = '0px';
+    stats.domElement.style.width = '90px'
+    document.body.appendChild(stats.domElement);
+
+
+
+    var scene, camera, renderer;
+    var controls;
+
+
+    var particleSystem;
+
+
+    function init() {
+
+
+
+        renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000000);
+
+        document.body.appendChild(renderer.domElement);
+
+        //
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100000 );
+        camera.position.z = 2000;
+
+        controls = new THREE.TrackballControls( camera );
+
+        controls.rotateSpeed = 10.0;
+        controls.zoomSpeed = 5;
+        controls.panSpeed = 2;
+
+        controls.noZoom = false;
+        controls.noPan = false;
+
+        controls.staticMoving = true;
+        controls.dynamicDampingFactor = 0.3;
+
+
+        scene = new THREE.Scene();
+
+        window.addEventListener( 'resize', onWindowResize, false );
+
+        particleSystem = new ParticleSystemBasic();
+        particleSystem.initialize(100000);
+
+        scene.add(particleSystem.getMesh());
+
+
+        var sphereGeometry = new THREE.SphereGeometry( 300, 32, 32 );
+        var sphereMaterial = new THREE.MeshPhongMaterial( { color: 0xaa00000, specular: 0x111111 } );
+
+        var sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        sphereMesh.position.x = 700;
+        sphereMesh.position.y = -200;
+
+
+
+        var plane = new THREE.Mesh(
+                new THREE.PlaneBufferGeometry( 30000, 30000 ),
+                new THREE.MeshPhongMaterial( { color: 0x111111, specular: 0x222222 } )
+        );
+        plane.rotation.x = -Math.PI/2;
+        plane.position.y = -1500;
+        scene.add( plane );
+
+
+
+        scene.add(sphereMesh);
+
+        // Lights
+
+        scene.add( new THREE.AmbientLight( 0x777777 ) );
+
+        addShadowedLight( 1, 1, 1, 0xffffff, 1.35 );
+        addShadowedLight( 0.5, 1, -1, 0xffaa00, 1 );
+
+
+
+
+
+    }
+
+    function addShadowedLight( x, y, z, color, intensity ) {
+
+        var directionalLight = new THREE.DirectionalLight( color, intensity );
+        directionalLight.position.set( x, y, z )
+        scene.add( directionalLight );
+
+        directionalLight.castShadow = true;
+        // directionalLight.shadowCameraVisible = true;
+
+        var d = 1;
+        directionalLight.shadowCameraLeft = -d;
+        directionalLight.shadowCameraRight = d;
+        directionalLight.shadowCameraTop = d;
+        directionalLight.shadowCameraBottom = -d;
+
+        directionalLight.shadowCameraNear = 1;
+        directionalLight.shadowCameraFar = 4;
+
+        directionalLight.shadowMapWidth = 1024;
+        directionalLight.shadowMapHeight = 1024;
+
+        directionalLight.shadowBias = -0.005;
+        directionalLight.shadowDarkness = 0.15;
+
+    }
+
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+        controls.handleResize();
+    }
+
+    function animate() {
+
+        stats.begin();
+
+
+        var cen = new THREE.Vector3(0,-300,0);
+        var nor = new THREE.Vector3(0,1,0);
+        var rad = 150;
+
+
+        //particleSystem.addParticlesFromSphere(100, cen, rad);
+        particleSystem.addParticlesFromDisk(50, cen, nor, rad);
+
+
+        particleSystem.updateParticles(clock.getDelta());
+
+        controls.update();
+
+        renderer.clear();
+        renderer.clearDepth();
+        renderer.render( scene, camera );
+
+
+        stats.end();
+
+        requestAnimationFrame( animate );
+    }
+
+    init();
+
+    animate();
+
+</script>
+
+</body>
+</html>
