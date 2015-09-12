@@ -13,10 +13,7 @@
     <script src="./ObjectField.js"></script>
 
 
-    <script src="./NoiseGenerator.js"></script>
-
-
-    <script src="./ParticleSystemBasic.js"></script>
+    <script src="./ParticleSystem.js"></script>
     <script src="./lib/Stats.js"></script>
 
     <script src="./dat.gui.min.js"></script>
@@ -84,7 +81,7 @@
 
         window.addEventListener( 'resize', onWindowResize, false );
 
-        particleSystem = new ParticleSystemBasic();
+        particleSystem = new ParticleSystem();
         particleSystem.initialize(100000);
 
         scene.add(particleSystem.getMesh());
