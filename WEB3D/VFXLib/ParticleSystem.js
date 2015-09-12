@@ -1,120 +1,384 @@
-
-var vertexShaderCode;
-var fragmentShaderCode;
+document.write("<script type='text/javascript' src='./GlobalDefinition.js'><"+"/script>");
+document.write("<script type='text/javascript' src='./NoiseGenerator.js'><"+"/script>");
 
 function ParticleSystem() {
 
-    var this_ = this;
-    var totalNum = 10000;
+    var _this = this;
 
-    this.particleCount = 0;
+    var noiseGen0 = new SimplexNoise();
+    var noiseGen1 = new SimplexNoise();
+    var noiseGen2 = new SimplexNoise();
 
-    // info for vertex array
-    this.texCoords  = new Float32Array(totalNum*2);
-    this.positions  = new Float32Array(totalNum*3);
-    this.velocities = new Float32Array(totalNum*3);
+    var positionBuffer;
+    var velocityBuffer;
+    var lifeBuffer;
+    var sizeBuffer;
+    var opacityBuffer;
 
-    this.texPositions;
-    this.texVelocities;
+    var total;
+    var count;
+    var tail;
 
-    // info for texture;
-    this.width  = 1024;
-    this.height = 1024;
+    // seed properties
+    var seedVelDir;
+    var seedVelMag;
+    var seedLife;
+    var seedSize;
+    var seedSpread;
 
-    // optional
-    this.gravity = new THREE.Vector3();
+    var globalForce;
+    var windStrength = 40;
 
-    //
-    var rendererRTT;
-    var sceneRTT;
-    var cameraRTT;
-    var planeGeo;
-    var quad;
+    // render options for three.js
+    var pointGeometry;
+    var pointMaterial;
+    var pointMesh;
 
-    this.initialize = function(renderer) {
+    var basicMaterial;
 
-        rendererRTT = renderer;
+    // interaction objects
+    var sphereObject;
+    var planeObject;
 
-        this_.texPositions = new THREE.WebGLRenderTarget(this_.width, this_.height,
-            {minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter, format: THREE.RGBFormat});
-        this_.texVelocities = new THREE.WebGLRenderTarget(this_.width, this_.height,
-            {minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter, format: THREE.RGBFormat});
+    this.setParameters = function(params) {
 
-        sceneRTT = new THREE.Scene();
+        // params is JSON type
+        if(params.seedVelDir != undefined) {
+            seedVelDir = params.seedVelDir.clone();
+        }
 
-        cameraRTT = new THREE.OrthographicCamera(this_.width / -2, this_.width / 2, this_.height / 2, this_.height / -2, -10000, 10000);
-        cameraRTT.position.z = 100;
+        if(params.seedVelMag != undefined) {
+            seedVelMag = params.seedVelMag;
+        }
 
+        if(params.seedLife != undefined) {
+            seedLife = params.seedLife;
+        }
 
-        var material = new THREE.ShaderMaterial({
+        if(params.seedSize != undefined) {
+            seedSize = params.seedSize;
+        }
 
-            uniform : { posField:{ type:"t", value:0, texture:this_.texPositions},
-                        velField:{ type:"t", value:0, texture:this_.texVelocities}},
-            vertexShader: vertexShaderCode,
-            fragmentShader: fragmentShaderCode
+        if(params.seedSpread != undefined) {
+            seedSpread = params.seedSpread;
+        }
 
-        });
+        if(params.globalForce != undefined) {
+            globalForce = params.globalForce.clone();
+        }
 
+        if(params.windStrength != undefined) {
+            windStrength = params.windStrength;
+        }
 
+        if(params.tex != undefined) {
+            tex = params.tex.clone();
+        }
 
-        planeGeo = new THREE.PlaneGeometry(this_.width, this_.height);
-        quad = new THREE.Mesh(planeGeo, material);
-        quad.position.z = 100;
     }
 
-    this.addParticle = function(pos, vel) {
+    this.initialize = function(_total) {
 
-        this_.particleCount += 1;
+        //noiseGen0.seed(0.23);
+        //noiseGen1.seed(0.45);
+        //noiseGen2.seed(0.94);
+        //noise.seed(Math.random());
 
-        var idx = (this_.particleCount-1)*3;
+        seedVelDir = new THREE.Vector3(0, 1, 0);
+        seedVelMag = 600.0;
+        seedLife = 3;
+        seedSize = 600;
+        seedSpread = 0.2;
+
+        globalForce = new THREE.Vector3(0, 50, 0);
+
+        //
+
+        total = _total;
+        count = 0;
+        tail = -1;
+
+        positionBuffer = new THREE.BufferAttribute(new Float32Array(total*3),3);
+        velocityBuffer = new THREE.BufferAttribute(new Float32Array(total*3),3);
+        lifeBuffer     = new THREE.BufferAttribute(new Float32Array(total*1),1);
+        sizeBuffer     = new THREE.BufferAttribute(new Float32Array(total*1),1);
+        opacityBuffer  = new THREE.BufferAttribute(new Float32Array(total*1),1);
+
+        // initialize three.js Mesh
+        pointGeometry = new THREE.BufferGeometry();
+
+        pointGeometry.addAttribute('position', positionBuffer);
+        pointGeometry.addAttribute('velocity', velocityBuffer);
+        pointGeometry.addAttribute('life'    , lifeBuffer);
+        pointGeometry.addAttribute('size'    , sizeBuffer);
+        pointGeometry.addAttribute('opacity' , opacityBuffer);
 
 
-        this_.positions[idx+0] = pos.x;
-        this_.positions[idx+1] = pos.y;
-        this_.positions[idx+2] = pos.z;
+        var tex = new THREE.ImageUtils.loadTexture("./textures/flame.png");
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
 
-        this_.velocities[idx+0] = vel.x;
-        this_.velocities[idx+1] = vel.y;
-        this_.velocities[idx+2] = vel.z;
+        pointMaterial = new THREE.ShaderMaterial({
+            attributes: {
+                position : {type:'v3', value: null},
+                velocity : {type:'v3', value: null},
+                life     : {type:'f' , value: null},
+                size     : {type:'f' , value: null},
+                opacity  : {type:'f' , value: null}
+            },
+            uniforms: {
+                color    : {type: 'c', value: new THREE.Color(0x0000aa)},
+                texture  : {type: 't', value: tex},
+                maxLife  : {type: 'f', value: seedLife}
+            },
+            vertexShader  : loadFileToString("./shaders/pointCloudVert.glsl"),
+            fragmentShader: loadFileToString("./shaders/pointCloudFrag.glsl"),
+            transparent : true,
+            depthTest : true,
+            depthWrite : false,
+            blending : THREE.CustomBlending,
+            blendEquation : THREE.AddEquation,
+            blendSrc : THREE.SrcAlphaFactor,
+            blendDst : THREE.OneFactor
+        });
 
-        // compute texture coordinates
+        basicMaterial = new THREE.PointCloudMaterial({
+            color: 0x0000ff
+        });
 
-        var i = (this_.particleCount-1)&this_.width;
-        var j = (this_.particleCount-1)/this_.width;
+        basicMaterial.size = 10.0;
 
-        var tix = (this_.particleCount-1)*2;
+        pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
 
-        this_.texCoords[tix+0] = i/this_.width;
-        this_.texCoords[tix+1] = j/this_.height;
-    };
+
+        //
+
+        sphereObject = new SphereObject();
+        sphereObject.initialize(new THREE.Vector3(700, -200, 0), 300);
+
+        planeObject = new PlaneObject();
+        planeObject.initialize(new THREE.Vector3(0, -1500, 0), new THREE.Vector3(0, 1, 0));
+
+    }
+
+    this.spreadForce = function(acc) {
+
+        if(Math.random() < 0.3) return acc.clone();
+
+        return acc.clone();
+
+        var dir = new THREE.Vector3((Math.random()-0.5), (Math.random()-0.5), (Math.random()-0.5));
+        dir.normalize();
+
+        if(dir.dot(acc) < 0.0) {
+            dir.multiplyScalar(-1);
+        }
+
+        var accMag = acc.length();
+        var accDir = new THREE.Vector3(acc.x, acc.y, acc.z);
+        accDir.normalize();
+
+        var spreadAcc = new THREE.Vector3();
+        spreadAcc.addVectors(accDir, dir.multiplyScalar(2));
+        spreadAcc.normalize();
+        spreadAcc.multiplyScalar(accMag);
+
+        return spreadAcc;
+    }
 
     this.updateParticles = function(dt) {
 
-        for(var i=0; i<this_.particleCount; i++) {
+        var validCount = 0;
+        var validTail = -1;
 
-            var idx = i*3;
+        var d = new Date();
+        var n = d.getTime();
 
-            this_.positions[idx+0] += this_.velocities[idx+0]*dt;
-            this_.positions[idx+1] += this_.velocities[idx+1]*dt;
-            this_.positions[idx+2] += this_.velocities[idx+2]*dt;
 
+        for(var i=0; i<=tail; i++) {
+
+            if(lifeBuffer.array[i] > 0.0) {
+
+                validCount += 1;
+                validTail = i;
+
+                var idx = i*3;
+
+                lifeBuffer.array[i] -= dt;
+
+                var pos = new THREE.Vector3(positionBuffer.array[idx+0], positionBuffer.array[idx+1], positionBuffer.array[idx+2]);
+                var vel = new THREE.Vector3(velocityBuffer.array[idx+0], velocityBuffer.array[idx+1], velocityBuffer.array[idx+2]);
+
+                var force = _this.spreadForce(globalForce);
+
+                if(windStrength > 0.0) {
+
+                    var vx = noiseGen0.noise3d(pos.x/500, pos.z/500, n*0.01);
+                    var vy = noiseGen1.noise3d(pos.x/500, pos.z/500, n*0.01);
+                    var vz = noiseGen2.noise3d(pos.x/500, pos.z/500, n*0.01);
+
+                    var wind = new THREE.Vector3(vx, vy, vz);
+                    vel.addVectors(vel, wind.multiplyScalar(windStrength)); // wind strength
+                }
+
+
+                vel.addVectors(vel, force.multiplyScalar(dt));
+                pos.addVectors(pos, vel.clone().multiplyScalar(dt));
+
+                //
+
+                var spTime = 0.1;
+
+                if(sphereObject.collide(pos, vel) == true) {
+                    if(lifeBuffer.array[i] > spTime) {
+                        lifeBuffer.array[i] = spTime;
+                    }
+                }
+                if(planeObject.collide(pos, vel) == true) {
+                    if(lifeBuffer.array[i] > spTime) {
+                        lifeBuffer.array[i] = spTime;
+                    }
+                }
+
+                //
+
+                velocityBuffer.array[idx+0] = vel.x;
+                velocityBuffer.array[idx+1] = vel.y;
+                velocityBuffer.array[idx+2] = vel.z;
+
+                positionBuffer.array[idx+0] = pos.x;
+                positionBuffer.array[idx+1] = pos.y;
+                positionBuffer.array[idx+2] = pos.z;
+
+            }
+            else {
+                lifeBuffer.array[i] = 0.0;
+                sizeBuffer.array[i] = 0.0;
+            }
+        }
+
+        count = validCount;
+        tail = validTail;
+
+        positionBuffer.needsUpdate = true;
+        velocityBuffer.needsUpdate = true;
+        lifeBuffer.needsUpdate     = true;
+        sizeBuffer.needsUpdate     = true;
+
+        pointGeometry.computeBoundingBox();
+        pointGeometry.computeBoundingSphere();
+
+        pointMesh.geometry.drawcalls.pop();
+        pointMesh.geometry.addDrawCall(0,tail+1,0);
+    }
+
+
+    this.addParticle = function(i, pos) {
+
+        if(i >= total) return;
+
+        var dir = new THREE.Vector3((Math.random()-0.5), (Math.random()-0.5), (Math.random()-0.5));
+        dir.normalize();
+
+        if(dir.dot(seedVelDir) < 0.0) {
+            dir.multiplyScalar(-1);
+        }
+
+        var vel = new THREE.Vector3();
+        vel.addVectors(seedVelDir, dir.multiplyScalar(seedSpread));
+        vel.normalize();
+        vel.multiplyScalar(seedVelMag);
+
+        //
+
+        var idx = i*3;
+
+        lifeBuffer.array[i] = Math.random()*seedLife;
+        sizeBuffer.array[i] = Math.random()*seedSize;
+        opacityBuffer.array[i] = 1.0;
+
+        positionBuffer.array[idx+0] = pos.x;
+        positionBuffer.array[idx+1] = pos.y;
+        positionBuffer.array[idx+2] = pos.z;
+
+        velocityBuffer.array[idx+0] = vel.x;
+        velocityBuffer.array[idx+1] = vel.y;
+        velocityBuffer.array[idx+2] = vel.z;
+
+        count += 1;
+        tail = Math.max(i, tail);
+    }
+
+    this.addParticlesFromSphere = function(num, center, rad) {
+
+        var seed = num;
+
+        for(var i=0; i<total; i++) {
+
+            if(lifeBuffer.array[i] <= 0.0) {
+
+                var dir = new THREE.Vector3((Math.random()-0.5), (Math.random()-0.5), (Math.random()-0.5));
+                dir.normalize();
+                dir.multiplyScalar(rad);
+
+                var pos = new THREE.Vector3();
+                pos.addVectors(center, dir);
+
+                _this.addParticle(i, pos);
+
+                seed -= 1;
+            }
+
+            if(seed == 0) {
+                break;
+            }
         }
     }
 
-    this.advectParticles = function(dt) {
+    this.addParticlesFromDisk = function(num, center, normal, rad) {
 
-        renderer.render(scene, camera, target);
+        var seed = num;
 
+        for(var i=0; i<total; i++) {
+
+            if(lifeBuffer.array[i] <= 0.0) {
+
+                var dir = new THREE.Vector3((Math.random() - 0.5), (Math.random() - 0.5), (Math.random() - 0.5));
+                dir.normalize();
+                dir.multiplyScalar(rad);
+
+                var pos = new THREE.Vector3();
+                pos.addVectors(center, dir);
+
+                //
+
+                var deviation = new THREE.Vector3();
+                deviation.subVectors(pos, center);
+
+                var nor = normal.clone();
+                nor.normalize();
+
+                var dot = nor.dot(deviation);
+                nor.multiplyScalar(dot);
+
+                pos.subVectors(pos, nor);
+
+                //
+
+                _this.addParticle(i, pos);
+
+                seed -= 1;
+            }
+
+            if(seed == 0) {
+                break;
+            }
+        }
+    }
+
+    this.getMesh = function() {
+        pointMesh.geometry.drawcalls.pop();
+        pointMesh.geometry.addDrawCall(0,tail+1,0);
+        return pointMesh;
     }
 }
-
-
-vertexShaderCode = ""
-fragmentShaderCode = ""
-
-
-// references
-// https://classes.soe.ucsc.edu/cmps161/Winter06/projects/keller/
-// http://www.hackbarth-gfx.com/2013/03/17/making-of-1-million-particles/
-// https://threejsdoc.appspot.com/doc/index.html#Particle
-
