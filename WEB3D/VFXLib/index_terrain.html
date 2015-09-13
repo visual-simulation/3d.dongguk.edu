@@ -6,6 +6,7 @@
 
     <script src="./lib/three/build/three.min.js"></script>
     <script src="./lib/three/examples/js/controls/TrackballControls.js"></script>
+    <script src="./lib/three/examples/js/SkyShader.js"></script>
 
     <script src="./SphereObject.js"></script>
     <script src="./PlaneObject.js"></script>
@@ -39,30 +40,17 @@
         var field = new ObjectField();
         field.initialize(grid);
 
-
         var idx = grid.getCellIndex(new THREE.Vector3(0,0,0));
-
-
 
         var scene, camera, renderer;
         var controls;
 
-
         var particleSystem;
         var terrain;
-
-
-        var gui, ParamConfig = {
-            seedVelDir : new THREE.Vector3(0.7, -2, 0),
-            seedVelMag : 500.0,
-            seedLife : 1000,
-            seedSize : 200,
-            seedSpread : 0.15,
-            colorBase : new THREE.Color(0Xfffafa),
-            tex : THREE.ImageUtils.loadTexture("./textures/snowflake.png")
-        };
+        var sky, sunSphere;
 
         function init() {
+
             var noise = new TerrainNoise();
             terrain = new Terrain();
             terrain.initialize( noise, 1024, 4, 64 );
@@ -74,10 +62,10 @@
             document.body.appendChild(renderer.domElement);
 
             //
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100000 );
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000000 );
             camera.position.z = 2000;
 
-            controls = new THREE.TrackballControls( camera );
+            controls = new THREE.TrackballControls( camera, renderer.domElement );
 
             controls.rotateSpeed = 10.0;
             controls.zoomSpeed = 5;
@@ -89,50 +77,39 @@
             controls.staticMoving = true;
             controls.dynamicDampingFactor = 0.3;
 
-
-            scene = new THREE.Scene();
-
             window.addEventListener( 'resize', onWindowResize, false );
 
             particleSystem = new ParticleSystem();
             particleSystem.initialize(100000);
 
+            scene = new THREE.Scene();
             scene.add(particleSystem.getMesh());
-
-
-            var sphereGeometry = new THREE.SphereGeometry( 300, 32, 32 );
-            var sphereMaterial = new THREE.MeshPhongMaterial( { color: 0xaa00000, specular: 0x111111 } );
-
-            var sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
-            sphereMesh.position.x = 700;
-            sphereMesh.position.y = -200;
-
-
-
-            //
-
-            field.addMesh(sphereMesh);
-            //
-
-
-            var plane = new THREE.Mesh(
-                    new THREE.PlaneBufferGeometry( 30000, 30000 ),
-                    new THREE.MeshPhongMaterial( { color: 0x999999, specular: 0x101010 } )
-            );
-            plane.rotation.x = -Math.PI/2;
-            plane.position.y = -1500;
-            scene.add( plane );
             scene.add(terrain.getMesh());
+         // scene.add(grid.getMesh());
 
-            scene.add(sphereMesh);
-            scene.add(grid.getMesh());
+            var helper = new THREE.GridHelper( 5000, 5000 );
+            helper.color1.setHex( 0xffffff );
+            helper.color2.setHex( 0xffffff );
+            scene.add( helper );
 
+            initSky();
 
             // Lights
             scene.add( new THREE.AmbientLight( 0x777777 ) );
 
             addShadowedLight( 1, 1, 1, 0xffffff, 1.35 );
             addShadowedLight( 0.5, 1, -1, 0xffaa00, 1 );
+
+
+            var gui, ParamConfig = {
+                seedVelDir : new THREE.Vector3(0.7, -2, 0),
+                seedVelMag : 500.0,
+                seedLife : 1000,
+                seedSize : 200,
+                seedSpread : 0.15,
+                colorBase : new THREE.Color(0Xfffafa),
+                tex : THREE.ImageUtils.loadTexture("./textures/snowflake.png")
+            };
 
             gui = new dat.GUI();
 
@@ -155,6 +132,68 @@
                 var spread = {seedSpread : value};
                 particleSystem.setParameters(spread);
             });
+        }
+
+        function initSky(){
+            // Add Sky Mesh
+            sky = new THREE.Sky();
+            scene.add( sky.mesh );
+
+            // Add Sun Helper
+            sunSphere = new THREE.Mesh( new THREE.SphereGeometry( 20000, 30, 30 ),
+                    new THREE.MeshBasicMaterial({color: 0xffffff, wireframe: false }));
+            sunSphere.position.y = -700000;
+            sunSphere.visible = true;
+            scene.add( sunSphere );
+
+            /// GUI
+            var effectController  = {
+                turbidity: 10,
+                reileigh: 2,
+                mieCoefficient: 0.005,
+                mieDirectionalG: 0.8,
+                luminance: 1,
+                inclination: 0.49, // elevation / inclination
+                azimuth: 0.25, // Facing front,
+                sun: !true
+            }
+
+            var distance = 400000;
+
+            function guiChanged() {
+                var uniforms = sky.uniforms;
+                uniforms.turbidity.value = effectController.turbidity;
+                uniforms.reileigh.value = effectController.reileigh;
+                uniforms.luminance.value = effectController.luminance;
+                uniforms.mieCoefficient.value = effectController.mieCoefficient;
+                uniforms.mieDirectionalG.value = effectController.mieDirectionalG;
+
+                var theta = Math.PI * (effectController.inclination - 0.5);
+                var phi = 2 * Math.PI * (effectController.azimuth - 0.5);
+
+                sunSphere.position.x = distance * Math.cos(phi);
+                sunSphere.position.y = distance * Math.sin(phi) * Math.sin(theta);
+                sunSphere.position.z = distance * Math.sin(phi) * Math.cos(theta);
+
+                sunSphere.visible = effectController.sun;
+
+                sky.uniforms.sunPosition.value.copy(sunSphere.position);
+
+            }
+
+
+            var gui = new dat.GUI();
+            gui.add( effectController, "turbidity", 1.0, 20.0, 0.1 ).onChange( guiChanged );
+            gui.add( effectController, "reileigh", 0.0, 4, 0.001 ).onChange( guiChanged );
+            gui.add( effectController, "mieCoefficient", 0.0, 0.1, 0.001 ).onChange( guiChanged );
+            gui.add( effectController, "mieDirectionalG", 0.0, 1, 0.001 ).onChange( guiChanged );
+            gui.add( effectController, "luminance", 0.0, 2).onChange( guiChanged );;
+            gui.add( effectController, "inclination", 0, 1, 0.0001).onChange( guiChanged );
+            gui.add( effectController, "azimuth", 0, 1, 0.0001).onChange( guiChanged );
+            gui.add( effectController, "sun").onChange( guiChanged );
+            guiChanged();
+
+            camera.lookAt(sunSphere.position)
         }
 
         function addShadowedLight( x, y, z, color, intensity ) {
@@ -180,7 +219,6 @@
 
             directionalLight.shadowBias = -0.005;
             directionalLight.shadowDarkness = 0.15;
-
         }
 
         function onWindowResize() {
@@ -189,42 +227,32 @@
             camera.updateProjectionMatrix();
 
             renderer.setSize( window.innerWidth, window.innerHeight );
-
-            controls.handleResize();
         }
 
         function animate() {
 
-            stats.begin();
-
+            requestAnimationFrame( animate );
 
             var cen = new THREE.Vector3(0,10000,0);
             var nor = new THREE.Vector3(0,-1,0);
             var rad = 10000;
-
-
-            //particleSystem.addParticlesFromSphere(100, cen, rad);
             particleSystem.addParticlesFromDisk(100, cen, nor, rad);
-
-
             particleSystem.updateParticles(clock.getDelta());
 
             controls.update();
 
-            renderer.clear();
-            renderer.clearDepth();
-            renderer.render( scene, camera );
-
-
-            stats.end();
-
-            requestAnimationFrame( animate );
+            render();
          }
 
+        function render() {
+//          renderer.clear();
+//          renderer.clearDepth();
+            renderer.render( scene, camera );
+            stats.update();
+        }
+
         init();
-
         animate();
-
     </script>
 
 </body>
