@@ -169,13 +169,13 @@
 
             particleSystemFire.setParameters({
                 seedVelDir: new THREE.Vector3(0, 1, 0),
-                seedVelMag: 1000.0,
+                seedVelMag: 800.0,
                 globalForce: new THREE.Vector3(0, 10, 0),
-                windStrength: 30,
+                windStrength: 2,
                 seedSize: 200,
                 seedLife: 0.5,
                 texFile : "./textures/flame.png",
-                particleColor: new THREE.Color(1,0.2,0.2),
+                particleColor: new THREE.Color(1,0.8,0.8),
                 alpha : 5.0
             });
 
@@ -308,7 +308,7 @@
             var rad = 1000;
 
             particleSystem.addParticlesFromDisk(20, cen, nor, rad);
-            particleSystem.updateParticles(clock.getDelta());
+            particleSystem.updateParticles(0.01);
 
             {
                 var cen = new THREE.Vector3(0,80,0);
@@ -316,7 +316,7 @@
                 var rad = 100;
 
                 particleSystemFire.addParticlesFromDisk(10, cen, nor, rad);
-                particleSystemFire.updateParticles(clock.getDelta());
+                particleSystemFire.updateParticles(0.01);
 
             }
 
