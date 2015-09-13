@@ -4,6 +4,7 @@ precision mediump int;
 uniform vec3 color;
 uniform sampler2D texture;
 uniform float maxLife;
+uniform float alpha;
 
 varying float vShape;
 varying float vLife;
@@ -26,5 +27,5 @@ void main() {
     float a = (vLife/maxLife);
     if(a < 0.0) a = 0.0;
 
-    gl_FragColor = vec4(glColor, c.w*a);
+    gl_FragColor = vec4(glColor, c.w * a * alpha);
 }
