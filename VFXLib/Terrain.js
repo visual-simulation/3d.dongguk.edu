@@ -141,7 +141,9 @@ function Terrain() {
 
         var m = new THREE.Matrix4();
         m.makeRotationX(pi * 1.5);
+        m.multiplyScalar(10);
         mesh.applyMatrix( m );
+
         /*jslint bitwise: false */
     };
 

@@ -83,6 +83,8 @@ function TerrainNoise() {
 
     var perlin = new ImprovedNoise();
     var quality = 1;
+    var quality_ground = 1;
+
     var z = Math.random() * 100;
 
     // Do several passes to get more detail
@@ -90,9 +92,14 @@ function TerrainNoise() {
         for ( var i = 0; i < size; i ++ ) {
             var x = i % width;
             var y = Math.floor( i / width );
-            data[i] += Math.abs( perlin.noise( x / quality, y / quality, z ) * quality );
+
+            if(x >= 0 && x <= 200 && y >= 900 && y <= 1024)
+                data[i] += Math.abs( perlin.noise( x / quality, y / quality, z ) * quality_ground );
+            else
+                data[i] += Math.abs( perlin.noise( x / quality, y / quality, z ) * quality );
         }
         quality *= 5;
+        quality_ground *= 3;
     }
 
     var noise = new THREE.DataTexture( data, width, width, THREE.AlphaFormat );
