@@ -92,14 +92,23 @@ function TerrainNoise() {
         for ( var i = 0; i < size; i ++ ) {
             var x = i % width;
             var y = Math.floor( i / width );
+            var inv_y = width - y;
+            var distance = Math.sqrt(x*x+inv_y*inv_y);
+            var weight_distance = distance / 600;
 
-            if(x >= 0 && x <= 200 && y >= 900 && y <= 1024)
-                data[i] += Math.abs( perlin.noise( x / quality, y / quality, z ) * quality_ground );
+            if(distance < 300)
+                data[i] += Math.abs( perlin.noise( x / quality, y / quality, z ) * quality ) * weight_distance * 0.7;
+            else if(distance < 400)
+                data[i] += Math.abs( perlin.noise( x / quality, y / quality, z ) * quality ) * weight_distance * 0.8;
+            else if(distance < 500)
+                data[i] += Math.abs( perlin.noise( x / quality, y / quality, z ) * quality ) * weight_distance * 0.9;
+            else if(distance < 600)
+                data[i] += Math.abs( perlin.noise( x / quality, y / quality, z ) * quality ) * weight_distance;
             else
                 data[i] += Math.abs( perlin.noise( x / quality, y / quality, z ) * quality );
         }
-        quality *= 5;
-        quality_ground *= 3;
+        quality *= 7;
+        quality_ground *= 2;
     }
 
     var noise = new THREE.DataTexture( data, width, width, THREE.AlphaFormat );
