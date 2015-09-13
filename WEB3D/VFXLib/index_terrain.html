@@ -70,7 +70,7 @@
             //
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000000 );
             camera.position.y = 300;
-            camera.position.x = 300;
+            camera.position.x = 400;
             camera.position.z = 700;
 
             controls = new THREE.TrackballControls( camera, renderer.domElement );
@@ -79,8 +79,8 @@
             controls.zoomSpeed = 5;
             controls.panSpeed = 2;
 
-            controls.noZoom = false;
-            controls.noPan = false;
+            controls.noZoom = true;
+            controls.noPan = true;
 
             controls.staticMoving = true;
             controls.dynamicDampingFactor = 0.3;
@@ -133,6 +133,9 @@
 
                 object.position.y = 10;
                 object.scale.set(3, 3, 3);
+
+                object.castShadow = true;
+
                 scene.add(object);
             });
 
@@ -141,9 +144,6 @@
             helper.color1.setHex( 0xffffff );
             helper.color2.setHex( 0xffffff );
             scene.add( helper );
-
-
-
 
 
             initSky();
@@ -160,7 +160,7 @@
                 seedVelMag: 500.0,
                 globalForce: new THREE.Vector3(0, -0.1, 0),
                 windStrength: 50,
-                seedSize: 10,
+                seedSize: 30,
                 seedLife: 2.0,
                 texFile : "./textures/snowflake.png",
                 particleColor: new THREE.Color(0Xfffafa),
@@ -311,7 +311,7 @@
             particleSystem.updateParticles(clock.getDelta());
 
             {
-                var cen = new THREE.Vector3(0,0,0);
+                var cen = new THREE.Vector3(0,80,0);
                 var nor = new THREE.Vector3(0,1,0);
                 var rad = 100;
 
