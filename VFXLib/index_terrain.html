@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+
+    <script src="./lib/three/build/three.min.js"></script>
+    <script src="./lib/three/examples/js/controls/TrackballControls.js"></script>
+
+    <script src="./SphereObject.js"></script>
+    <script src="./PlaneObject.js"></script>
+    <script src="./Grid.js"></script>
+    <script src="./ObjectField.js"></script>
+
+    <script src="./ParticleSystem.js"></script>
+    <script src="./lib/Stats.js"></script>
+    <script src="./dat.gui.min.js"></script>
+
+    <script src="./TerrainNoise.js"></script>
+    <script src="./Terrain.js"></script>
+</head>
+<body>
+
+    <script>
+
+        var clock = new THREE.Clock();
+
+        var stats = new Stats();
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+        stats.domElement.style.width = '90px'
+        document.body.appendChild(stats.domElement);
+
+
+        var grid = new Grid();
+        grid.initialize(4, 4, 4, new THREE.Vector3(-10000.0, -10000.0, -10000.0), new THREE.Vector3(10000.0, 10000.0, 10000.0));
+
+        var field = new ObjectField();
+        field.initialize(grid);
+
+
+        var idx = grid.getCellIndex(new THREE.Vector3(0,0,0));
+
+
+
+        var scene, camera, renderer;
+        var controls;
+
+
+        var particleSystem;
+        var terrain;
+
+
+        var gui, ParamConfig = {
+            seedVelDir : new THREE.Vector3(0.7, -2, 0),
+            seedVelMag : 500.0,
+            seedLife : 1000,
+            seedSize : 200,
+            seedSpread : 0.15,
+            colorBase : new THREE.Color(0Xfffafa),
+            tex : THREE.ImageUtils.loadTexture("./textures/snowflake.png")
+        };
+
+        function init() {
+            var noise = new TerrainNoise();
+            terrain = new Terrain();
+            terrain.initialize( noise, 1024, 4, 64 );
+
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xaaaaaa);
+
+            document.body.appendChild(renderer.domElement);
+
+            //
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100000 );
+            camera.position.z = 2000;
+
+            controls = new THREE.TrackballControls( camera );
+
+            controls.rotateSpeed = 10.0;
+            controls.zoomSpeed = 5;
+            controls.panSpeed = 2;
+
+            controls.noZoom = false;
+            controls.noPan = false;
+
+            controls.staticMoving = true;
+            controls.dynamicDampingFactor = 0.3;
+
+
+            scene = new THREE.Scene();
+
+            window.addEventListener( 'resize', onWindowResize, false );
+
+            particleSystem = new ParticleSystem();
+            particleSystem.initialize(100000);
+
+            scene.add(particleSystem.getMesh());
+
+
+            var sphereGeometry = new THREE.SphereGeometry( 300, 32, 32 );
+            var sphereMaterial = new THREE.MeshPhongMaterial( { color: 0xaa00000, specular: 0x111111 } );
+
+            var sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            sphereMesh.position.x = 700;
+            sphereMesh.position.y = -200;
+
+
+
+            //
+
+            field.addMesh(sphereMesh);
+            //
+
+
+            var plane = new THREE.Mesh(
+                    new THREE.PlaneBufferGeometry( 30000, 30000 ),
+                    new THREE.MeshPhongMaterial( { color: 0x999999, specular: 0x101010 } )
+            );
+            plane.rotation.x = -Math.PI/2;
+            plane.position.y = -1500;
+            scene.add( plane );
+            scene.add(terrain.getMesh());
+
+            scene.add(sphereMesh);
+            scene.add(grid.getMesh());
+
+
+            // Lights
+            scene.add( new THREE.AmbientLight( 0x777777 ) );
+
+            addShadowedLight( 1, 1, 1, 0xffffff, 1.35 );
+            addShadowedLight( 0.5, 1, -1, 0xffaa00, 1 );
+
+            gui = new dat.GUI();
+
+            gui.add(ParamConfig, 'seedVelMag', 200, 1000).onChange(function(value){
+                var velMag = {seedVelMag : value};
+                particleSystem.setParameters(velMag);
+            });
+
+            gui.add(ParamConfig, 'seedLife', 1, 2000).onChange(function(value){
+                var life = {seedLife : value};
+                particleSystem.setParameters(life);
+            });
+
+            gui.add(ParamConfig, 'seedSize', 100, 1000).onChange(function(value){
+                var seed = {seedSize : value};
+                particleSystem.setParameters(seed);
+            });
+
+            gui.add(ParamConfig, 'seedSpread', 0.1, 4.0).onChange(function(value){
+                var spread = {seedSpread : value};
+                particleSystem.setParameters(spread);
+            });
+        }
+
+        function addShadowedLight( x, y, z, color, intensity ) {
+
+            var directionalLight = new THREE.DirectionalLight( color, intensity );
+            directionalLight.position.set( x, y, z )
+            scene.add( directionalLight );
+
+            directionalLight.castShadow = true;
+            // directionalLight.shadowCameraVisible = true;
+
+            var d = 1;
+            directionalLight.shadowCameraLeft = -d;
+            directionalLight.shadowCameraRight = d;
+            directionalLight.shadowCameraTop = d;
+            directionalLight.shadowCameraBottom = -d;
+
+            directionalLight.shadowCameraNear = 1;
+            directionalLight.shadowCameraFar = 4;
+
+            directionalLight.shadowMapWidth = 1024;
+            directionalLight.shadowMapHeight = 1024;
+
+            directionalLight.shadowBias = -0.005;
+            directionalLight.shadowDarkness = 0.15;
+
+        }
+
+        function onWindowResize() {
+
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize( window.innerWidth, window.innerHeight );
+
+            controls.handleResize();
+        }
+
+        function animate() {
+
+            stats.begin();
+
+
+            var cen = new THREE.Vector3(0,10000,0);
+            var nor = new THREE.Vector3(0,-1,0);
+            var rad = 10000;
+
+
+            //particleSystem.addParticlesFromSphere(100, cen, rad);
+            particleSystem.addParticlesFromDisk(100, cen, nor, rad);
+
+
+            particleSystem.updateParticles(clock.getDelta());
+
+            controls.update();
+
+            renderer.clear();
+            renderer.clearDepth();
+            renderer.render( scene, camera );
+
+
+            stats.end();
+
+            requestAnimationFrame( animate );
+         }
+
+        init();
+
+        animate();
+
+    </script>
+
+</body>
+</html>
