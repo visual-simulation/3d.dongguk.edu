@@ -1,7 +1,10 @@
+document.write("<script type='text/javascript' src='./Obstacle.js'><"+"/script>");
 
 function ObjectField() {
 
     var _this = this;
+
+    var obstacleArray;
 
     var fieldArray;
     var externalFieldArray;
@@ -10,6 +13,8 @@ function ObjectField() {
     var idCount = 0;
 
     this.initialize = function(grid) {
+
+        obstacleArray = new Array();
 
         var num = grid.getCellNum();
         var fieldArray = new Array(num);
@@ -20,6 +25,22 @@ function ObjectField() {
 
         externalFieldArray = new Array();
         objectArray = new Array();
+    }
+
+    this.initialize = function() {
+
+        obstacleArray = new Array();
+
+    }
+
+    this.addObstacle = function(obs) {
+        obstacleArray.push(obs);
+    }
+
+    this.collide = function(pos, vel) {
+        for(var i=0; i<obstacleArray.length; i++) {
+            obstacleArray[i].collide(pos, vel);
+        }
     }
 
     this.addMesh = function(mesh) {
@@ -45,7 +66,7 @@ function ObjectField() {
 
         delete objectArray[mesh.ofId];
     }
-
+/*
     this.collide = function(pos, vel, dt) {
 
         for(var n=0; n<objectArray.length; n++) {
@@ -63,4 +84,5 @@ function ObjectField() {
 
         return {isInside:true, distance:0, normal:new THREE.Vector3()};
     }
+*/
 }
