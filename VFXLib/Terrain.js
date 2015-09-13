@@ -148,6 +148,7 @@ function Terrain() {
     };
 
     this.getMesh = function()    {
+        mesh.receiveShadow = true;
         return mesh;
     }
 
