@@ -45,9 +45,9 @@ function Terrain() {
     var mesh = new THREE.Object3D();
     var pi = 3.1415926535897932384626433832795;
 
-    this.setOffset = function(pos){
-        offset.x = pos.x;
-        offset.y = pos.y;
+    this.update = function(x, y){
+        offset.x = x;
+        offset.y = y;
     }
 
     // Terrain is an extension of Object3D and thus can be added directly to the stage
@@ -162,6 +162,7 @@ function Terrain() {
         mesh.add( plane );
     }
 
+    
     function createTerrainMaterial( heightData, globalOffset, offset, scale, resolution, edgeMorph ) {
         // Is it bad to change this for every tile?
         modifyDefine(terrainVert, "TILE_RESOLUTION", resolution.toFixed(1));

@@ -8,8 +8,9 @@
     <script src="./lib/three/examples/js/controls/TrackballControls.js"></script>
     <script src="./lib/three/examples/js/SkyShader.js"></script>
 
-    <script src="./SphereObject.js"></script>
-    <script src="./PlaneObject.js"></script>
+    <script src="./lib/three/examples/js/loaders/VRMLLoader.js"></script>
+    <script src="./lib/three/examples/js/loaders/OBJLoader.js"></script>
+
     <script src="./Grid.js"></script>
     <script src="./ObjectField.js"></script>
 
@@ -83,14 +84,34 @@
             particleSystem.initialize(100000);
 
             scene = new THREE.Scene();
-            scene.add(particleSystem.getMesh());
+//            scene.add(particleSystem.getMesh());
             scene.add(terrain.getMesh());
-         // scene.add(grid.getMesh());
 
-            var helper = new THREE.GridHelper( 5000, 5000 );
-            helper.color1.setHex( 0xffffff );
-            helper.color2.setHex( 0xffffff );
-            scene.add( helper );
+//            scene.add( sky.mesh );
+ //           scene.add( sunSphere );
+
+            // Loader
+            var loader = new THREE.OBJLoader();
+            loader.load("models/campfire.obj", function(object){
+
+                var material = new THREE.MeshPhongMaterial( { color: 0x111111, specular: 0x111111, shininess: 30 });
+                material.side = THREE.DoubleSide;
+
+                object.traverse( function ( child ) {
+
+                    if ( child instanceof THREE.Mesh ) {
+
+                        child.material = material;
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+
+                object.position.y = 10;
+                object.scale.set(1, 1, 1);
+                scene.add(object);
+            });
+
 
             initSky();
 
@@ -137,14 +158,12 @@
         function initSky(){
             // Add Sky Mesh
             sky = new THREE.Sky();
-            scene.add( sky.mesh );
 
             // Add Sun Helper
             sunSphere = new THREE.Mesh( new THREE.SphereGeometry( 20000, 30, 30 ),
                     new THREE.MeshBasicMaterial({color: 0xffffff, wireframe: false }));
             sunSphere.position.y = -700000;
             sunSphere.visible = true;
-            scene.add( sunSphere );
 
             /// GUI
             var effectController  = {
@@ -192,8 +211,6 @@
             gui.add( effectController, "azimuth", 0, 1, 0.0001).onChange( guiChanged );
             gui.add( effectController, "sun").onChange( guiChanged );
             guiChanged();
-
-            camera.lookAt(sunSphere.position)
         }
 
         function addShadowedLight( x, y, z, color, intensity ) {
@@ -239,6 +256,7 @@
             particleSystem.addParticlesFromDisk(100, cen, nor, rad);
             particleSystem.updateParticles(clock.getDelta());
 
+            terrain.update(0, 0);
             controls.update();
 
             render();
