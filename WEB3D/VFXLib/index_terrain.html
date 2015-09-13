@@ -8,6 +8,7 @@
     <script src="./lib/three/examples/js/controls/TrackballControls.js"></script>
     <script src="./lib/three/examples/js/SkyShader.js"></script>
 
+
     <script src="./lib/three/examples/js/loaders/VRMLLoader.js"></script>
     <script src="./lib/three/examples/js/loaders/OBJLoader.js"></script>
 
@@ -47,8 +48,12 @@
         var controls;
 
         var particleSystem;
+        var particleSystemFire;
+
         var terrain;
         var sky, sunSphere;
+
+        var animation;
 
         function init() {
 
@@ -56,7 +61,7 @@
             terrain = new Terrain();
             terrain.initialize( noise, 1024, 4, 64 );
 
-            renderer = new THREE.WebGLRenderer();
+            renderer = new THREE.WebGLRenderer( { antialias: true } );
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setClearColor(0xaaaaaa);
 
@@ -64,7 +69,9 @@
 
             //
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000000 );
-            camera.position.z = 2000;
+            camera.position.y = 300;
+            camera.position.x = 300;
+            camera.position.z = 700;
 
             controls = new THREE.TrackballControls( camera, renderer.domElement );
 
@@ -81,14 +88,31 @@
             window.addEventListener( 'resize', onWindowResize, false );
 
             particleSystem = new ParticleSystem();
-            particleSystem.initialize(100000);
+            particleSystem.initialize(10000);
+
+            particleSystemFire = new ParticleSystem();
+            particleSystemFire.initialize(10000);
 
             scene = new THREE.Scene();
-//            scene.add(particleSystem.getMesh());
+
+            scene.add(particleSystem.getMesh());
+            scene.add(particleSystemFire.getMesh());
+
             scene.add(terrain.getMesh());
 
-//            scene.add( sky.mesh );
- //           scene.add( sunSphere );
+
+            var loader = new THREE.JSONLoader( true );
+            loader.load( "./models/sittingBox.json", function( geometry ) {
+
+                mesh = new THREE.Mesh( geometry, new THREE.MeshLambertMaterial( { color: 0x606060, morphTargets: true, side:THREE.DoubleSide } ) );
+                mesh.scale.set(300,300,300);
+                mesh.position.set(0,0,-400);
+
+                scene.add( mesh );
+
+                animation = new THREE.MorphAnimation( mesh );
+                animation.play();
+            } );
 
             // Loader
             var loader = new THREE.OBJLoader();
@@ -108,9 +132,18 @@
                 });
 
                 object.position.y = 10;
-                object.scale.set(1, 1, 1);
+                object.scale.set(3, 3, 3);
                 scene.add(object);
             });
+
+
+            var helper = new THREE.GridHelper( 5000, 5000 );
+            helper.color1.setHex( 0xffffff );
+            helper.color2.setHex( 0xffffff );
+            scene.add( helper );
+
+
+
 
 
             initSky();
@@ -122,36 +155,56 @@
             addShadowedLight( 0.5, 1, -1, 0xffaa00, 1 );
 
 
+            particleSystem.setParameters({
+                seedVelDir: new THREE.Vector3(0.3,-1,0),
+                seedVelMag: 500.0,
+                globalForce: new THREE.Vector3(0, -0.1, 0),
+                windStrength: 50,
+                seedSize: 10,
+                seedLife: 2.0,
+                texFile : "./textures/snowflake.png",
+                particleColor: new THREE.Color(0Xfffafa),
+                alpha : 1.0
+            });
+
+            particleSystemFire.setParameters({
+                seedVelDir: new THREE.Vector3(0, 1, 0),
+                seedVelMag: 1000.0,
+                globalForce: new THREE.Vector3(0, 10, 0),
+                windStrength: 30,
+                seedSize: 200,
+                seedLife: 0.5,
+                texFile : "./textures/flame.png",
+                particleColor: new THREE.Color(1,0.2,0.2),
+                alpha : 5.0
+            });
+
             var gui, ParamConfig = {
-                seedVelDir : new THREE.Vector3(0.7, -2, 0),
                 seedVelMag : 500.0,
-                seedLife : 1000,
-                seedSize : 200,
-                seedSpread : 0.15,
-                colorBase : new THREE.Color(0Xfffafa),
-                tex : THREE.ImageUtils.loadTexture("./textures/snowflake.png")
+                seedLife : 40.0,
+                seedSize : 30,
+                windStrength: 0,
+                globalForceX: 0,
+                globalForceY: 0,
+                globalForceZ: 0
             };
 
             gui = new dat.GUI();
 
             gui.add(ParamConfig, 'seedVelMag', 200, 1000).onChange(function(value){
-                var velMag = {seedVelMag : value};
-                particleSystem.setParameters(velMag);
+                particleSystem.setParameters({seedVelMag : value});
             });
 
             gui.add(ParamConfig, 'seedLife', 1, 2000).onChange(function(value){
-                var life = {seedLife : value};
-                particleSystem.setParameters(life);
+                particleSystem.setParameters({seedLife : value});
             });
 
-            gui.add(ParamConfig, 'seedSize', 100, 1000).onChange(function(value){
-                var seed = {seedSize : value};
-                particleSystem.setParameters(seed);
+            gui.add(ParamConfig, 'seedSize', 0, 1000).onChange(function(value){
+                particleSystem.setParameters({seedSize : value});
             });
 
-            gui.add(ParamConfig, 'seedSpread', 0.1, 4.0).onChange(function(value){
-                var spread = {seedSpread : value};
-                particleSystem.setParameters(spread);
+            gui.add(ParamConfig, 'windStrength', 0, 1000).onChange(function(value){
+                particleSystem.setParameters({windStrength: value});
             });
         }
 
@@ -250,11 +303,22 @@
 
             requestAnimationFrame( animate );
 
-            var cen = new THREE.Vector3(0,10000,0);
+            var cen = new THREE.Vector3(0,500,0);
             var nor = new THREE.Vector3(0,-1,0);
-            var rad = 10000;
-            particleSystem.addParticlesFromDisk(100, cen, nor, rad);
+            var rad = 1000;
+
+            particleSystem.addParticlesFromDisk(20, cen, nor, rad);
             particleSystem.updateParticles(clock.getDelta());
+
+            {
+                var cen = new THREE.Vector3(0,0,0);
+                var nor = new THREE.Vector3(0,1,0);
+                var rad = 100;
+
+                particleSystemFire.addParticlesFromDisk(10, cen, nor, rad);
+                particleSystemFire.updateParticles(clock.getDelta());
+
+            }
 
             terrain.update(0, 0);
             controls.update();
@@ -262,11 +326,24 @@
             render();
          }
 
+        var prevTime = Date.now();
+
         function render() {
-//          renderer.clear();
-//          renderer.clearDepth();
+
+            if ( animation ) {
+
+                var time = Date.now();
+
+                animation.update( (time - prevTime)*0.1 );
+
+                prevTime = time;
+
+            }
+
             renderer.render( scene, camera );
             stats.update();
+
+
         }
 
         init();

@@ -85,6 +85,10 @@ function ParticleSystem() {
             pointMaterial.uniforms.color = {type: 'c', value: particleColor};
             pointMaterial.needsUpdate = true;
         }
+        if(params.alpha != undefined) {
+            pointMaterial.uniforms.alpha = {type: 'f', value: params.alpha};
+            pointMaterial.needsUpdate = true;
+        }
 
     }
 
@@ -134,7 +138,8 @@ function ParticleSystem() {
             uniforms: {
                 color    : {type: 'c', value: new THREE.Color(0xffffff)},
                 texture  : {type: 't', value: tex},
-                maxLife  : {type: 'f', value: seedLife}
+                maxLife  : {type: 'f', value: seedLife},
+                alpha    : {type: 'f', value: 1.0}
             },
             vertexShader  : loadFileToString("./shaders/pointCloudVert.glsl"),
             fragmentShader: loadFileToString("./shaders/pointCloudFrag.glsl"),
