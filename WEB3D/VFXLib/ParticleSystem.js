@@ -1,5 +1,7 @@
 document.write("<script type='text/javascript' src='./GlobalDefinition.js'><"+"/script>");
 document.write("<script type='text/javascript' src='./NoiseGenerator.js'><"+"/script>");
+document.write("<script type='text/javascript' src='./ObjectField.js'><"+"/script>");
+
 
 function ParticleSystem() {
 
@@ -13,7 +15,7 @@ function ParticleSystem() {
     var velocityBuffer;
     var lifeBuffer;
     var sizeBuffer;
-    var opacityBuffer;
+    var shapeBuffer;
 
     var total;
     var count;
@@ -26,8 +28,10 @@ function ParticleSystem() {
     var seedSize;
     var seedSpread;
 
+    var particleColor;
+
     var globalForce;
-    var windStrength = 40;
+    var windStrength = 0;
 
     // render options for three.js
     var pointGeometry;
@@ -36,9 +40,12 @@ function ParticleSystem() {
 
     var basicMaterial;
 
-    // interaction objects
-    var sphereObject;
-    var planeObject;
+    //
+    var objectField;
+
+    this.setObstacleField = function(field) {
+        objectField = field;
+    }
 
     this.setParameters = function(params) {
 
@@ -46,51 +53,49 @@ function ParticleSystem() {
         if(params.seedVelDir != undefined) {
             seedVelDir = params.seedVelDir.clone();
         }
-
         if(params.seedVelMag != undefined) {
             seedVelMag = params.seedVelMag;
         }
-
         if(params.seedLife != undefined) {
             seedLife = params.seedLife;
         }
-
         if(params.seedSize != undefined) {
             seedSize = params.seedSize;
         }
-
         if(params.seedSpread != undefined) {
             seedSpread = params.seedSpread;
         }
-
         if(params.globalForce != undefined) {
             globalForce = params.globalForce.clone();
         }
-
         if(params.windStrength != undefined) {
             windStrength = params.windStrength;
         }
-
         if(params.tex != undefined) {
-            tex = params.tex.clone();
+            pointMaterial.uniforms.texture = {type: 't', value: params.tex};
+            pointMaterial.needsUpdate = true;
+        }
+        if(params.texFile != undefined) {
+            var tex = THREE.ImageUtils.loadTexture(params.texFile);
+            pointMaterial.uniforms.texture = {type: 't', value: tex};
+            pointMaterial.needsUpdate = true;
+        }
+        if(params.particleColor != undefined) {
+            particleColor = params.particleColor.clone();
+            pointMaterial.uniforms.color = {type: 'c', value: particleColor};
+            pointMaterial.needsUpdate = true;
         }
 
     }
 
     this.initialize = function(_total) {
 
-        //noiseGen0.seed(0.23);
-        //noiseGen1.seed(0.45);
-        //noiseGen2.seed(0.94);
-        //noise.seed(Math.random());
-
         seedVelDir = new THREE.Vector3(0, 1, 0);
-        seedVelMag = 600.0;
+        seedVelMag = 0.1;
         seedLife = 3;
-        seedSize = 600;
+        seedSize = 0.1;
         seedSpread = 0.2;
-
-        globalForce = new THREE.Vector3(0, 50, 0);
+        globalForce = new THREE.Vector3(0, 0, 0);
 
         //
 
@@ -102,7 +107,7 @@ function ParticleSystem() {
         velocityBuffer = new THREE.BufferAttribute(new Float32Array(total*3),3);
         lifeBuffer     = new THREE.BufferAttribute(new Float32Array(total*1),1);
         sizeBuffer     = new THREE.BufferAttribute(new Float32Array(total*1),1);
-        opacityBuffer  = new THREE.BufferAttribute(new Float32Array(total*1),1);
+        shapeBuffer    = new THREE.BufferAttribute(new Float32Array(total*1),1);
 
         // initialize three.js Mesh
         pointGeometry = new THREE.BufferGeometry();
@@ -111,7 +116,7 @@ function ParticleSystem() {
         pointGeometry.addAttribute('velocity', velocityBuffer);
         pointGeometry.addAttribute('life'    , lifeBuffer);
         pointGeometry.addAttribute('size'    , sizeBuffer);
-        pointGeometry.addAttribute('opacity' , opacityBuffer);
+        pointGeometry.addAttribute('shape'   , shapeBuffer);
 
 
         var tex = new THREE.ImageUtils.loadTexture("./textures/flame.png");
@@ -124,10 +129,10 @@ function ParticleSystem() {
                 velocity : {type:'v3', value: null},
                 life     : {type:'f' , value: null},
                 size     : {type:'f' , value: null},
-                opacity  : {type:'f' , value: null}
+                shape    : {type:'f' , value: null}
             },
             uniforms: {
-                color    : {type: 'c', value: new THREE.Color(0x0000aa)},
+                color    : {type: 'c', value: new THREE.Color(0xffffff)},
                 texture  : {type: 't', value: tex},
                 maxLife  : {type: 'f', value: seedLife}
             },
@@ -139,26 +144,15 @@ function ParticleSystem() {
             blending : THREE.CustomBlending,
             blendEquation : THREE.AddEquation,
             blendSrc : THREE.SrcAlphaFactor,
-            blendDst : THREE.OneFactor
+            blendDst : THREE.DstAlphaFactor
         });
 
         basicMaterial = new THREE.PointCloudMaterial({
             color: 0x0000ff
         });
-
         basicMaterial.size = 10.0;
 
         pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
-
-
-        //
-
-        sphereObject = new SphereObject();
-        sphereObject.initialize(new THREE.Vector3(700, -200, 0), 300);
-
-        planeObject = new PlaneObject();
-        planeObject.initialize(new THREE.Vector3(0, -1500, 0), new THREE.Vector3(0, 1, 0));
-
     }
 
     this.spreadForce = function(acc) {
@@ -194,7 +188,6 @@ function ParticleSystem() {
         var d = new Date();
         var n = d.getTime();
 
-
         for(var i=0; i<=tail; i++) {
 
             if(lifeBuffer.array[i] > 0.0) {
@@ -208,8 +201,10 @@ function ParticleSystem() {
 
                 var pos = new THREE.Vector3(positionBuffer.array[idx+0], positionBuffer.array[idx+1], positionBuffer.array[idx+2]);
                 var vel = new THREE.Vector3(velocityBuffer.array[idx+0], velocityBuffer.array[idx+1], velocityBuffer.array[idx+2]);
+                var velMag = vel.length();
 
-                var force = _this.spreadForce(globalForce);
+                //var force = _this.spreadForce(globalForce);
+                var force = globalForce.clone();
 
                 if(windStrength > 0.0) {
 
@@ -225,22 +220,9 @@ function ParticleSystem() {
                 vel.addVectors(vel, force.multiplyScalar(dt));
                 pos.addVectors(pos, vel.clone().multiplyScalar(dt));
 
-                //
-
-                var spTime = 0.1;
-
-                if(sphereObject.collide(pos, vel) == true) {
-                    if(lifeBuffer.array[i] > spTime) {
-                        lifeBuffer.array[i] = spTime;
-                    }
+                if(objectField != undefined) {
+                    objectField.collide(pos, vel);
                 }
-                if(planeObject.collide(pos, vel) == true) {
-                    if(lifeBuffer.array[i] > spTime) {
-                        lifeBuffer.array[i] = spTime;
-                    }
-                }
-
-                //
 
                 velocityBuffer.array[idx+0] = vel.x;
                 velocityBuffer.array[idx+1] = vel.y;
@@ -264,6 +246,7 @@ function ParticleSystem() {
         velocityBuffer.needsUpdate = true;
         lifeBuffer.needsUpdate     = true;
         sizeBuffer.needsUpdate     = true;
+        shapeBuffer.needsUpdate    = true;
 
         pointGeometry.computeBoundingBox();
         pointGeometry.computeBoundingSphere();
@@ -293,9 +276,9 @@ function ParticleSystem() {
 
         var idx = i*3;
 
-        lifeBuffer.array[i] = Math.random()*seedLife;
-        sizeBuffer.array[i] = Math.random()*seedSize;
-        opacityBuffer.array[i] = 1.0;
+        lifeBuffer.array[i]  = Math.random()*seedLife;
+        sizeBuffer.array[i]  = Math.random()*seedSize;
+        shapeBuffer.array[i] = Math.random()*Math.PI*2.0;
 
         positionBuffer.array[idx+0] = pos.x;
         positionBuffer.array[idx+1] = pos.y;
@@ -319,7 +302,7 @@ function ParticleSystem() {
 
                 var dir = new THREE.Vector3((Math.random()-0.5), (Math.random()-0.5), (Math.random()-0.5));
                 dir.normalize();
-                dir.multiplyScalar(rad);
+                dir.multiplyScalar(Math.random()*rad);
 
                 var pos = new THREE.Vector3();
                 pos.addVectors(center, dir);
@@ -345,7 +328,7 @@ function ParticleSystem() {
 
                 var dir = new THREE.Vector3((Math.random() - 0.5), (Math.random() - 0.5), (Math.random() - 0.5));
                 dir.normalize();
-                dir.multiplyScalar(rad);
+                dir.multiplyScalar(Math.random()*rad);
 
                 var pos = new THREE.Vector3();
                 pos.addVectors(center, dir);

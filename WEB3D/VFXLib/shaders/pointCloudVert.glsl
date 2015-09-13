@@ -4,14 +4,14 @@ precision mediump int;
 attribute vec3 velocity;
 attribute float life;
 attribute float size;
-attribute float opacity;
+attribute float shape;
 
-varying float vOpacity;
+varying float vShape;
 varying float vLife;
 
 void main() {
 
-    vOpacity = opacity;
+    vShape = shape;
     vLife = life;
 
     vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
