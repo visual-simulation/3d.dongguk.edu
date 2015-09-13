@@ -59,9 +59,9 @@ function Terrain() {
         terrainToonFrag = loadFileToString("./shaders/terrainToon.frag");
 
         textures = {
-            grass: THREE.ImageUtils.loadTexture( texturePath + "grass.jpg" ),
+        //  grass: THREE.ImageUtils.loadTexture( texturePath + "grass.jpg" ),
             rock: THREE.ImageUtils.loadTexture( texturePath + "rock.jpg" ),
-            snow: THREE.ImageUtils.loadTexture( texturePath + "snow.jpg" )
+        //    snow: THREE.ImageUtils.loadTexture( texturePath + "snow.jpg" )
         };
 
         for ( var t in textures ) {
