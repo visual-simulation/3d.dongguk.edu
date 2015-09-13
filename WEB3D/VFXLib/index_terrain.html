@@ -8,7 +8,6 @@
     <script src="./lib/three/examples/js/controls/TrackballControls.js"></script>
     <script src="./lib/three/examples/js/SkyShader.js"></script>
 
-
     <script src="./lib/three/examples/js/loaders/VRMLLoader.js"></script>
     <script src="./lib/three/examples/js/loaders/OBJLoader.js"></script>
 
@@ -68,7 +67,9 @@
             document.body.appendChild(renderer.domElement);
 
             //
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000000 );
+            camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.5, 2000000 );
+            camera.setLens(20);
+
             camera.position.y = 300;
             camera.position.x = 400;
             camera.position.z = 700;
@@ -79,7 +80,7 @@
             controls.zoomSpeed = 5;
             controls.panSpeed = 2;
 
-            controls.noZoom = true;
+            controls.noZoom = false;
             controls.noPan = true;
 
             controls.staticMoving = true;
@@ -93,13 +94,13 @@
             particleSystemFire = new ParticleSystem();
             particleSystemFire.initialize(10000);
 
+
             scene = new THREE.Scene();
 
             scene.add(particleSystem.getMesh());
             scene.add(particleSystemFire.getMesh());
 
             scene.add(terrain.getMesh());
-
 
             var loader = new THREE.JSONLoader( true );
             loader.load( "./models/sittingBox.json", function( geometry ) {
@@ -139,14 +140,19 @@
                 scene.add(object);
             });
 
-
-            var helper = new THREE.GridHelper( 5000, 5000 );
-            helper.color1.setHex( 0xffffff );
-            helper.color2.setHex( 0xffffff );
-            scene.add( helper );
-
-
             initSky();
+            scene.add(sky.mesh);
+            scene.add(sunSphere);
+
+            // Ground
+            var plane = new THREE.Mesh(
+                    new THREE.PlaneBufferGeometry( 20000,20000 ),
+                    new THREE.MeshPhongMaterial( { color: 0xf0f0f0, specular: 0x000000 } )
+            );
+            plane.rotation.x = -Math.PI/2;
+            plane.position.y = -6;
+            plane.receiveShadow = true;
+            scene.add(plane);
 
             // Lights
             scene.add( new THREE.AmbientLight( 0x777777 ) );
@@ -264,6 +270,7 @@
             gui.add( effectController, "azimuth", 0, 1, 0.0001).onChange( guiChanged );
             gui.add( effectController, "sun").onChange( guiChanged );
             guiChanged();
+            camera.lookAt(sunSphere.position)
         }
 
         function addShadowedLight( x, y, z, color, intensity ) {
