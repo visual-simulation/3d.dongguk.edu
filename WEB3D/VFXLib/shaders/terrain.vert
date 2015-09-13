@@ -1,3 +1,5 @@
+#extension GL_OES_standard_derivatives : enable
+
 uniform vec3 uGlobalOffset;
 uniform sampler2D uHeightData;
 uniform vec2 uTileOffset;
@@ -47,6 +49,9 @@ vec3 getNormal() {
   return normalize(cross(pB - p, pA - p));
 }
 
+///////////////////////////////////
+//#include edgemorph.glsl
+///////////////////////////////////
 uniform int uEdgeMorph;
 
 #define EGDE_MORPH_TOP 1
@@ -84,6 +89,9 @@ float calculateMorph(vec3 p) {
 
   return morphFactor;
 }
+///////////////////////////////////
+
+
 
 void main() {
   // Morph factor tells us how close we are to next level.
