@@ -112,7 +112,7 @@ void main() {
   color = mix( color, fogColor, fogFactor );
 
   // Add distance fog
-//float depth = gl_FragCoord.z / gl_FragCoord.w;
+//  float depth = gl_FragCoord.z / gl_FragCoord.w;
   float depth = 0.1;
 
 
@@ -121,6 +121,6 @@ void main() {
   fogColor = mix( vec3( 1.0, 0.945, 0.847 ), vec3( 0.98, 0.77, 0.33), fogAngle );
   color = mix( color, fogColor, fogFactor );
 
-//  gl_FragColor = vec4(color, 1.0);
-  gl_FragColor = vec4(color, 1.0 - fogFactor);
+  gl_FragColor = vec4(color, 1.0);
+//  gl_FragColor = vec4(color, 1.0 - fogFactor);
 }
