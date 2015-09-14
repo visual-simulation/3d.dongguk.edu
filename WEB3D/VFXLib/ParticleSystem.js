@@ -208,10 +208,9 @@ function ParticleSystem() {
                 var vel = new THREE.Vector3(velocityBuffer.array[idx+0], velocityBuffer.array[idx+1], velocityBuffer.array[idx+2]);
                 var velMag = vel.length();
 
-                //var force = _this.spreadForce(globalForce);
                 var force = globalForce.clone();
 
-                if(windStrength > 0.0) {
+                if(windStrength > 0.0 && velMag > 0.05) {
 
                     var vx = noiseGen0.noise3d(pos.x/500, pos.z/500, n*0.01);
                     var vy = noiseGen1.noise3d(pos.x/500, pos.z/500, n*0.01);
