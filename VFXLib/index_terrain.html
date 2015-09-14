@@ -176,45 +176,31 @@
             addShadowedLight( 0.5, 1, -1, 0xffaa00, 1 );
             addShadowedLight( 0, 0, 1, 0x9c2a00, 0.9);
 
-            //composer
-            renderer.autoClear = false;
 
-            renderTargetParameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat, stencilBuffer: false };
 
-            renderTarget = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, renderTargetParameters );
-            renderTarget.generateMipmaps = false;
+            //Light
+            var ambient = new THREE.AmbientLight( 0x444444 );
+            scene.add( ambient );
 
-            effectBloom = new THREE.BloomPass( 0.3 );
-            var effectBleach = new THREE.ShaderPass( THREE.BleachBypassShader );
+            var light = new THREE.SpotLight( 0xffffff, 1, 0, Math.PI / 2, 1 );
+            light.position.set( 0, 1500, 1000 );
+            light.target.position.set( 0, 0, 0 );
 
-            var hblur = new THREE.ShaderPass( THREE.HorizontalTiltShiftShader );
-            var vblur = new THREE.ShaderPass( THREE.VerticalTiltShiftShader );
+            light.castShadow = true;
 
-            var bluriness = 2;
+            light.shadowCameraNear = 1200;
+            light.shadowCameraFar = 2500;
+            light.shadowCameraFov = 50;
 
-            hblur.uniforms[ 'h' ].value = bluriness / window.innerWidth;
-            vblur.uniforms[ 'v' ].value = bluriness / window.innerHeight;
+            //light.shadowCameraVisible = true;
 
-            hblur.uniforms[ 'r' ].value = vblur.uniforms[ 'r' ].value = 0.1;
+            light.shadowBias = 0.0001;
+            light.shadowDarkness = 0.5;
 
-            effectBleach.uniforms[ 'opacity' ].value = 0.65;
+            light.shadowMapWidth = 2048;
+            light.shadowMapHeight = 1024;
 
-            composer = new THREE.EffectComposer( renderer, renderTarget );
-
-            var renderModel = new THREE.RenderPass( scene, camera );
-
-            vblur.renderToScreen = true;
-
-            composer = new THREE.EffectComposer( renderer, renderTarget );
-
-            composer.addPass( renderModel );
-
-            composer.addPass( effectBloom );
-            //composer.addPass( effectBleach );
-
-            composer.addPass( hblur );
-            composer.addPass( vblur );
-
+            scene.add( light );
 
 
             particleSystem.setParameters(Examples.snowStorm);
@@ -391,8 +377,8 @@
 
             }
 
-            composer.render( 0.1 );
-//            renderer.render( scene, camera );
+//            composer.render( 0.1 );
+            renderer.render( scene, camera );
             stats.update();
 
 
