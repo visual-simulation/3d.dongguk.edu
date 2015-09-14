@@ -32,7 +32,7 @@
     <script src="./ParticleSystem.js"></script>
     <script src="./lib/Stats.js"></script>
     <script src="./dat.gui.min.js"></script>
-    <script src="paticleParameter.js"></script>
+    <script src="./paticleParameter.js"></script>
 
     <script src="./TerrainNoise.js"></script>
     <script src="./Terrain.js"></script>
@@ -333,16 +333,17 @@
             renderer.setSize( window.innerWidth, window.innerHeight );
         }
 
-        function animate() {
+        function loop() {
 
-            requestAnimationFrame( animate );
+            var begin = new Date;
+            stats.begin();
 
             var cen = new THREE.Vector3(0,500,0);
             var nor = new THREE.Vector3(0,-1,0);
             var rad = 1000;
 
             particleSystem.addParticlesFromDisk(20, cen, nor, rad);
-            particleSystem.updateParticles(0.01);
+            particleSystem.updateParticles(1/40);
 
             {
                 var cen = new THREE.Vector3(0,80,0);
@@ -350,16 +351,21 @@
                 var rad = 100;
 
                 particleSystemFire.addParticlesFromDisk(10, cen, nor, rad);
-                particleSystemFire.updateParticles(0.01);
+                particleSystemFire.updateParticles(1/40);
 
             }
-
 
             terrain.update(0, 0);
             controls.update();
 
             render();
-         }
+
+            stats.end();
+
+            var dt = new Date - begin;
+            setTimeout(loop, 1000/40 - dt);
+        }
+
 
         var prevTime = Date.now();
         var inclination = 0.2;
@@ -393,15 +399,12 @@
 
             }
 
-//            composer.render( 0.1 );
             renderer.render( scene, camera );
-            stats.update();
-
 
         }
 
         init();
-        animate();
+        loop();
     </script>
 
 </body>
