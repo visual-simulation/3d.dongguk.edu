@@ -30,7 +30,7 @@
         var ps;
 
         init();
-        animate();
+        loop();
 
         function init() {
 
@@ -53,7 +53,7 @@
                               seedVelMag: 2.0,
                               globalForce: new THREE.Vector3(0, -10,0),
                               windStrength: 0.05,
-                              seedSize: 0.5,
+                              seedSize: 0.6,
                               seedLife: 2.0,
                               texFile : "./textures/gradient.png",
                               particleColor: new THREE.Color(0.1, 0.1, 1.0),
@@ -201,25 +201,29 @@
 
         }
 
-        function animate() {
+        function loop() {
+
+            var begin = new Date;
+
+            stats.begin();
 
             var cen = new THREE.Vector3(-0.57,0.24,0.24);
             var rad = 0.11;
 
-            ps.addParticlesFromSphere(30, cen, rad);
-            ps.updateParticles(0.01);
-
-            requestAnimationFrame( animate );
+            ps.addParticlesFromSphere(50, cen, rad);
+            ps.updateParticles(1/40);
 
             render();
-            stats.update();
 
+            stats.end();
+
+            var dt = new Date - begin;
+            setTimeout(loop, 1000/40 - dt);
         }
 
         function render() {
 
-            var timer = Date.now() * 0.0005;
-
+            //var timer = Date.now() * 0.0005;
             //camera.position.x = Math.sin( timer ) * 3;
             //camera.position.z = Math.cos( timer ) * 3;
 

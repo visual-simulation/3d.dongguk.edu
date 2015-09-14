@@ -33,7 +33,8 @@
     var controls;
 
     init();
-    animate();
+    //animate();
+    loop();
 
     function init() {
 
@@ -129,22 +130,15 @@
     }
 
     //
+    function loop() {
 
-    function animate() {
-
-        requestAnimationFrame( animate );
-
-        render();
-        stats.update();
-
-        //ps.addParticlesFromSphere(100, cen, rad);
-
+        var begin = new Date;
+        stats.begin();
 
         if(animation != undefined ) {
 
             var frame = animation.currentFrame;
             var tar = mesh.geometry.morphTargets[frame];
-            var nor = mesh.geometry.morphNormals[frame];
 
             for(var i=0; i<tar.vertices.length; i++) {
 
@@ -158,14 +152,16 @@
 
                     ps.addParticlesFromSphere(1, v, 0);
                 }
-
-
-
             }
         }
 
-        ps.updateParticles(0.01);
+        ps.updateParticles(1/40);
+        render();
 
+        stats.end();
+
+        var dt = new Date - begin;
+        setTimeout(loop, 1000/40 - dt);
     }
 
     var radius = 600;
