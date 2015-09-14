@@ -11,6 +11,21 @@
     <script src="./lib/three/examples/js/loaders/VRMLLoader.js"></script>
     <script src="./lib/three/examples/js/loaders/OBJLoader.js"></script>
 
+    <script src="./lib/three/examples/js/shaders/BleachBypassShader.js"></script>
+    <script src="./lib/three/examples/js/shaders/ConvolutionShader.js"></script>
+    <script src="./lib/three/examples/js/shaders/CopyShader.js"></script>
+    <script src="./lib/three/examples/js/shaders/HorizontalTiltShiftShader.js"></script>
+    <script src="./lib/three/examples/js/shaders/LuminosityShader.js"></script>
+    <script src="./lib/three/examples/js/shaders/NormalMapShader.js"></script>
+    <script src="./lib/three/examples/js/shaders/VerticalTiltShiftShader.js"></script>
+
+    <script src="./lib/three/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="./lib/three/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="./lib/three/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="./lib/three/examples/js/postprocessing/BloomPass.js"></script>
+    <script src="./lib/three/examples/js/postprocessing/MaskPass.js"></script>
+    <script src="./lib/three/examples/js/postprocessing/SavePass.js"></script>
+
     <script src="./Grid.js"></script>
     <script src="./ObjectField.js"></script>
 
@@ -33,7 +48,6 @@
         stats.domElement.style.top = '0px';
         stats.domElement.style.width = '90px'
         document.body.appendChild(stats.domElement);
-
 
         var grid = new Grid();
         grid.initialize(4, 4, 4, new THREE.Vector3(-10000.0, -10000.0, -10000.0), new THREE.Vector3(10000.0, 10000.0, 10000.0));
@@ -132,7 +146,7 @@
                     }
                 });
 
-                object.position.y = 10;
+                object.position.y = 2;
                 object.scale.set(3, 3, 3);
 
                 object.castShadow = true;
@@ -159,6 +173,47 @@
 
             addShadowedLight( 1, 1, 1, 0xffffff, 1.35 );
             addShadowedLight( 0.5, 1, -1, 0xffaa00, 1 );
+
+
+            //composer
+            renderer.autoClear = false;
+
+            renderTargetParameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat, stencilBuffer: false };
+
+            renderTarget = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, renderTargetParameters );
+            renderTarget.generateMipmaps = false;
+
+            effectBloom = new THREE.BloomPass( 0.3 );
+            var effectBleach = new THREE.ShaderPass( THREE.BleachBypassShader );
+
+            var hblur = new THREE.ShaderPass( THREE.HorizontalTiltShiftShader );
+            var vblur = new THREE.ShaderPass( THREE.VerticalTiltShiftShader );
+
+            var bluriness = 2;
+
+            hblur.uniforms[ 'h' ].value = bluriness / window.innerWidth;
+            vblur.uniforms[ 'v' ].value = bluriness / window.innerHeight;
+
+            hblur.uniforms[ 'r' ].value = vblur.uniforms[ 'r' ].value = 0.1;
+
+            effectBleach.uniforms[ 'opacity' ].value = 0.65;
+
+            composer = new THREE.EffectComposer( renderer, renderTarget );
+
+            var renderModel = new THREE.RenderPass( scene, camera );
+
+            vblur.renderToScreen = true;
+
+            composer = new THREE.EffectComposer( renderer, renderTarget );
+
+            composer.addPass( renderModel );
+
+            composer.addPass( effectBloom );
+            //composer.addPass( effectBleach );
+
+            composer.addPass( hblur );
+            composer.addPass( vblur );
+
 
 
             particleSystem.setParameters({
@@ -347,7 +402,8 @@
 
             }
 
-            renderer.render( scene, camera );
+            composer.render( 0.1 );
+//            renderer.render( scene, camera );
             stats.update();
 
 
