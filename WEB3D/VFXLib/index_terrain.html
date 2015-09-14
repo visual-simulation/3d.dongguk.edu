@@ -176,8 +176,6 @@
             addShadowedLight( 0.5, 1, -1, 0xffaa00, 1 );
             addShadowedLight( 0, 0, 1, 0x9c2a00, 0.9);
 
-
-
             //Light
             var ambient = new THREE.AmbientLight( 0x444444 );
             scene.add( ambient );
@@ -201,7 +199,6 @@
             light.shadowMapHeight = 1024;
 
             scene.add( light );
-
 
             particleSystem.setParameters(Examples.snowStorm);
 
@@ -357,6 +354,7 @@
 
             }
 
+
             terrain.update(0, 0);
             controls.update();
 
@@ -364,14 +362,32 @@
          }
 
         var prevTime = Date.now();
-
+        var inclination = 0.2;
+        var azimuth = 0;
         function render() {
 
             if ( animation ) {
 
                 var time = Date.now();
+                var dt = (time - prevTime)*0.1;
+                animation.update(dt);
 
-                animation.update( (time - prevTime)*0.1 );
+               // inclination += 0.6+0.001*dt;
+                azimuth += 0+0.0002*dt;
+                var theta = Math.PI * (inclination - 0.5);
+                var phi = 2 * Math.PI * (azimuth - 0.5);
+
+                if(inclination >= 1)
+                    inclination = 0;
+                if(azimuth >= 1)
+                    azimuth = 0;
+
+                var x, y, z;
+                var distance = 400000;
+                sunSphere.position.x = distance * Math.cos(phi);
+                sunSphere.position.y = distance * Math.sin(phi) * Math.sin(theta);
+                sunSphere.position.z = distance * Math.sin(phi) * Math.cos(theta);
+                sky.uniforms.sunPosition.value.copy(sunSphere.position);
 
                 prevTime = time;
 
