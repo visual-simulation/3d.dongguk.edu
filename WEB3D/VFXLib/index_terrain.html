@@ -32,6 +32,7 @@
     <script src="./ParticleSystem.js"></script>
     <script src="./lib/Stats.js"></script>
     <script src="./dat.gui.min.js"></script>
+    <script src="paticleParameter.js"></script>
 
     <script src="./TerrainNoise.js"></script>
     <script src="./Terrain.js"></script>
@@ -173,7 +174,7 @@
 
             addShadowedLight( 1, 1, 1, 0xffffff, 1.35 );
             addShadowedLight( 0.5, 1, -1, 0xffaa00, 1 );
-
+            addShadowedLight( 0, 0, 1, 0x9c2a00, 0.9);
 
             //composer
             renderer.autoClear = false;
@@ -216,56 +217,44 @@
 
 
 
-            particleSystem.setParameters({
-                seedVelDir: new THREE.Vector3(0.3,-1,0),
-                seedVelMag: 500.0,
-                globalForce: new THREE.Vector3(0, -0.1, 0),
-                windStrength: 50,
-                seedSize: 30,
-                seedLife: 2.0,
-                texFile : "./textures/snowflake.png",
-                particleColor: new THREE.Color(0Xfffafa),
-                alpha : 1.0
-            });
+            particleSystem.setParameters(Examples.snowStorm);
 
-            particleSystemFire.setParameters({
-                seedVelDir: new THREE.Vector3(0, 1, 0),
-                seedVelMag: 800.0,
-                globalForce: new THREE.Vector3(0, 10, 0),
-                windStrength: 2,
-                seedSize: 200,
-                seedLife: 0.5,
-                texFile : "./textures/flame.png",
-                particleColor: new THREE.Color(1,0.8,0.8),
-                alpha : 5.0
-            });
+            particleSystemFire.setParameters(Examples.fire);
 
-            var gui, ParamConfig = {
-                seedVelMag : 500.0,
-                seedLife : 40.0,
-                seedSize : 30,
-                windStrength: 0,
-                globalForceX: 0,
-                globalForceY: 0,
-                globalForceZ: 0
-            };
+            //GUI
+            var gui, param1 = Examples.snowStorm;
 
             gui = new dat.GUI();
 
-            gui.add(ParamConfig, 'seedVelMag', 200, 1000).onChange(function(value){
+            var f1= gui.addFolder("parameter");
+            f1.add(param1, 'seedVelMag', 200, 1000).onChange(function(value){
                 particleSystem.setParameters({seedVelMag : value});
             });
 
-            gui.add(ParamConfig, 'seedLife', 1, 2000).onChange(function(value){
+            f1.add(param1, 'seedLife', 1, 2000).onChange(function(value){
                 particleSystem.setParameters({seedLife : value});
             });
 
-            gui.add(ParamConfig, 'seedSize', 0, 1000).onChange(function(value){
+            f1.add(param1, 'seedSize', 0, 100).onChange(function(value){
                 particleSystem.setParameters({seedSize : value});
             });
 
-            gui.add(ParamConfig, 'windStrength', 0, 1000).onChange(function(value){
+            f1.add(param1, 'windStrength', 0, 1000).onChange(function(value){
                 particleSystem.setParameters({windStrength: value});
+            });
+            f1.open();
+
+            var f2 = gui.addFolder("globalForce");
+
+            f2.add(param1, 'globalForceX').onChange(function(valueX){
+                particleSystem.setParameters({globalForce : new THREE.Vector3(valueX, param1.globalForceY,param1.globalForceZ)});
+            });
+            f2.add(param1, 'globalForceY').onChange(function(valueY){
+                particleSystem.setParameters({globalForce : new THREE.Vector3(param1.globalForceX, valueY, param1.globalForceZ)});
+
+            });
+            f2.add(param1, 'globalForceZ').onChange(function(valueZ){
+                particleSystem.setParameters({globalForce : new THREE.Vector3(param1.globalForceZ, param1.globalForceY,valueZ)});
             });
         }
 
