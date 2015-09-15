@@ -130,9 +130,17 @@
     }
 
     //
+    var fps = 40;
+    var time;
     function loop() {
 
-        var begin = new Date;
+        setTimeout(loop, 1000/fps);
+
+        var now = new Date().getTime();
+        var dt = (now - (time||now))/1000;
+        time = now;
+
+
         stats.begin();
 
         if(animation != undefined ) {
@@ -155,13 +163,10 @@
             }
         }
 
-        ps.updateParticles(1/40);
-        render();
+        ps.updateParticles(dt);
+        requestAnimationFrame(render);
 
         stats.end();
-
-        var dt = new Date - begin;
-        setTimeout(loop, 1000/40 - dt);
     }
 
     var radius = 600;

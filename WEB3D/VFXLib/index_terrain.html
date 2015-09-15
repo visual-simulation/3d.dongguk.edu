@@ -333,9 +333,16 @@
             renderer.setSize( window.innerWidth, window.innerHeight );
         }
 
+        var fps = 40;
+        var time;
         function loop() {
 
-            var begin = new Date;
+            setTimeout(loop, 1000/fps);
+
+            var now = new Date().getTime();
+            var dt = (now - (time||now))/1000;
+            time = now;
+
             stats.begin();
 
             var cen = new THREE.Vector3(0,500,0);
@@ -343,7 +350,7 @@
             var rad = 1000;
 
             particleSystem.addParticlesFromDisk(20, cen, nor, rad);
-            particleSystem.updateParticles(1/40);
+            particleSystem.updateParticles(dt);
 
             {
                 var cen = new THREE.Vector3(0,80,0);
@@ -351,19 +358,16 @@
                 var rad = 100;
 
                 particleSystemFire.addParticlesFromDisk(10, cen, nor, rad);
-                particleSystemFire.updateParticles(1/40);
+                particleSystemFire.updateParticles(dt);
 
             }
 
             terrain.update(0, 0);
             controls.update();
 
-            render();
+            requestAnimationFrame(render);
 
             stats.end();
-
-            var dt = new Date - begin;
-            setTimeout(loop, 1000/40 - dt);
         }
 
 
