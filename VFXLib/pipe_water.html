@@ -38,9 +38,22 @@
             document.body.appendChild( container );
 
             camera = new THREE.PerspectiveCamera( 35, window.innerWidth / window.innerHeight, 1, 15 );
-            camera.position.set( 2, 0.15, 2 );
 
-            cameraTarget = new THREE.Vector3( -1, -0.25, 0 );
+            camera.position.y = 0.8;
+            camera.position.x = 2.2;
+            camera.position.z = 3;
+
+            controls = new THREE.TrackballControls(camera);
+
+            controls.rotateSpeed = 10.0;
+            controls.zoomSpeed = 5;
+            controls.panSpeed = 2;
+
+            controls.noZoom = true;
+            controls.noPan = true;
+
+            controls.staticMoving = true;
+            controls.dynamicDampingFactor = 0.3;
 
             scene = new THREE.Scene();
             scene.fog = new THREE.Fog( 0x72645b, 2, 15 );
@@ -219,6 +232,7 @@
 
             ps.addParticlesFromSphere(50, cen, rad);
             ps.updateParticles(dt);
+            controls.update();
 
             requestAnimationFrame(render);
 
@@ -231,7 +245,7 @@
             //camera.position.x = Math.sin( timer ) * 3;
             //camera.position.z = Math.cos( timer ) * 3;
 
-            camera.lookAt( cameraTarget );
+           // camera.lookAt( cameraTarget );
 
             renderer.render( scene, camera );
 
