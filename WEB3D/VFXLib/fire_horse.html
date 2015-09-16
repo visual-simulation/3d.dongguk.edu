@@ -20,6 +20,8 @@
 <script src="./lib/three/examples/js/libs/stats.min.js"></script>
 <script src="./ParticleSystem.js"></script>
 <script type="text/javascript" src="./dat.gui.min.js"></script>
+<script src="./lib/three/examples/js/controls/TrackballControls.js"></script>
+
 
 <script>
 
@@ -66,8 +68,23 @@
         //
 
         camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 10000 );
+        camera.setLens(18);
+
         camera.position.y = 300;
-        camera.target = new THREE.Vector3( 0, 150, 0 );
+        camera.position.x = 350;
+        camera.position.z = 350;
+
+        controls = new THREE.TrackballControls(camera);
+
+        controls.rotateSpeed = 10.0;
+        controls.zoomSpeed = 5;
+        controls.panSpeed = 2;
+
+        controls.noZoom = false;
+        controls.noPan = false;
+
+        controls.staticMoving = true;
+        controls.dynamicDampingFactor = 0.3;
 
         scene = new THREE.Scene();
 
@@ -164,6 +181,8 @@
         }
 
         ps.updateParticles(dt);
+        controls.update();
+
         requestAnimationFrame(render);
 
         stats.end();
@@ -178,10 +197,10 @@
 
         theta += 0.1;
 
-        camera.position.x = radius * Math.sin( THREE.Math.degToRad( theta ) );
-        camera.position.z = radius * Math.cos( THREE.Math.degToRad( theta ) );
+//        camera.position.x = radius * Math.sin( THREE.Math.degToRad( theta ) );
+//        camera.position.z = radius * Math.cos( THREE.Math.degToRad( theta ) );
 
-        camera.lookAt( camera.target );
+//        camera.lookAt( camera.target );
 
         if ( animation ) {
 
@@ -194,6 +213,7 @@
         }
 
         renderer.render( scene, camera );
+        controls.update();
 
     }
 
