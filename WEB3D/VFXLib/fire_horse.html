@@ -103,6 +103,7 @@
 
             mesh = new THREE.Mesh( geometry, new THREE.MeshLambertMaterial( { color: 0x606060, morphTargets: true } ) );
             mesh.scale.set( 1.5, 1.5, 1.5 );
+            mesh.position.set(0,-100,0);
 
             scene.add( mesh );
 
@@ -172,8 +173,9 @@
                     var v = new THREE.Vector3();
                     v = tar.vertices[i].clone();
                     v = v.multiplyScalar(1.5);
+                    v.y -= 100;
 
-                    if(v.y < 120) continue;
+                    if(v.y < 20) continue;
 
                     ps.addParticlesFromSphere(1, v, 0);
                 }
@@ -199,7 +201,6 @@
 
 //        camera.position.x = radius * Math.sin( THREE.Math.degToRad( theta ) );
 //        camera.position.z = radius * Math.cos( THREE.Math.degToRad( theta ) );
-
 //        camera.lookAt( camera.target );
 
         if ( animation ) {
