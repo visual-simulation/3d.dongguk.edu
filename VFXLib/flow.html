@@ -1,0 +1,171 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>three.js webgl - morph targets - horse</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            font-family: Monospace;
+            background-color: #f0f0f0;
+            margin: 0px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<script src="./lib/three/build/three.min.js"></script>
+<script src="./lib/three/examples/js/libs/stats.min.js"></script>
+<script src="./ParticleSystem.js"></script>
+<script src="./FlowTexture.js"></script>
+<script type="text/javascript" src="./dat.gui.min.js"></script>
+<script src="./lib/three/examples/js/controls/TrackballControls.js"></script>
+
+
+<script>
+
+    var container, stats;
+    var camera, scene, projector, renderer;
+    var mesh, animation;
+
+    var ps;
+
+    var gui;
+    var controls;
+
+
+    var tv0 = new THREE.Vector3(0,0,0);
+    var tv1 = new THREE.Vector3(0,0,10);
+
+    var pointArray = [tv0, tv1];
+    var upDir = new THREE.Vector3(0.0, 1.0, 0.0);
+
+    var flowTexture = new FlowTexture();
+
+    flowTexture.construct(pointArray, upDir, 5.0);
+
+
+    init();
+    //animate();
+    loop();
+
+    function init() {
+
+        container = document.createElement( 'div' );
+        document.body.appendChild( container );
+
+        var info = document.createElement( 'div' );
+        info.style.position = 'absolute';
+        info.style.top = '10px';
+        info.style.width = '100%';
+        info.style.textAlign = 'center';
+
+        container.appendChild( info );
+
+        //
+
+        camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.01, 10000 );
+        camera.setLens(18);
+
+        camera.position.y = 2;
+        camera.position.x = -2;
+        camera.position.z = 2;
+
+        controls = new THREE.TrackballControls(camera);
+
+        controls.rotateSpeed = 10.0;
+        controls.zoomSpeed = 5;
+        controls.panSpeed = 2;
+
+        controls.noZoom = false;
+        controls.noPan = false;
+
+        controls.staticMoving = true;
+        controls.dynamicDampingFactor = 0.3;
+
+        scene = new THREE.Scene();
+
+        //
+
+        var light = new THREE.DirectionalLight( 0xefefff, 2 );
+        light.position.set( 1, 1, 1 ).normalize();
+        scene.add( light );
+
+        var light = new THREE.DirectionalLight( 0xffefef, 2 );
+        light.position.set( -1, -1, -1 ).normalize();
+        scene.add( light );
+
+
+        //scene.add(ps.getMesh());
+        scene.add(flowTexture.getMesh());
+
+        //
+
+        renderer = new THREE.WebGLRenderer( { antialias: true } );
+        renderer.setClearColor( 0xffffff );
+        //renderer.setPixelRatio( window.devicePixelRatio );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        container.appendChild(renderer.domElement);
+
+        //
+
+        stats = new Stats();
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.top = '0px';
+        container.appendChild( stats.domElement );
+
+        //
+
+        window.addEventListener( 'resize', onWindowResize, false );
+
+    }
+
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+    }
+
+    //
+    var fps = 40;
+    var time;
+    var accTime = 0.0;
+
+    function loop() {
+
+        setTimeout(loop, 1000/fps);
+
+        var now = new Date().getTime();
+        var dt = (now - (time||now))/1000;
+        time = now;
+
+        accTime += dt;
+
+        stats.begin();
+
+
+        flowTexture.update(accTime);
+
+        controls.update();
+
+        requestAnimationFrame(render);
+
+        stats.end();
+    }
+
+    function render() {
+
+        renderer.render( scene, camera );
+        controls.update();
+
+    }
+
+</script>
+
+</body>
+</html>
