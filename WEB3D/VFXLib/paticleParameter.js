@@ -21,7 +21,7 @@ Examples = {
 
     snowStorm :
     {
-        seedVelDir: new THREE.Vector3(0.3,-1,0),
+        seedVelDir: new THREE.Vector3(0.0,-1,0),
         seedVelMag: 500.0,
         globalForce: new THREE.Vector3(0, -0.1, 0),
         globalForceX: 0,
