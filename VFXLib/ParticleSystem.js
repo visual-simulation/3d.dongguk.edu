@@ -150,15 +150,15 @@ function ParticleSystem() {
             blendEquation : THREE.AddEquation,
             blendSrc : THREE.SrcAlphaFactor,
             blendDst : THREE.DstAlphaFactor
-        });
+});
 
-        basicMaterial = new THREE.PointCloudMaterial({
-            color: 0x0000ff
-        });
-        basicMaterial.size = 10.0;
+basicMaterial = new THREE.PointCloudMaterial({
+    color: 0x0000ff
+});
+basicMaterial.size = 10.0;
 
-        pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
-    }
+pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
+}
 
     this.spreadForce = function(acc) {
 
@@ -185,7 +185,7 @@ function ParticleSystem() {
         return spreadAcc;
     }
 
-    this.updateParticles = function(dt) {
+    this.updateParticles = function(dt, terrain) {
 
         var validCount = 0;
         var validTail = -1;
@@ -224,6 +224,7 @@ function ParticleSystem() {
                 vel.addVectors(vel, force.multiplyScalar(dt));
                 pos.addVectors(pos, vel.clone().multiplyScalar(dt));
 
+
                 if(objectField != undefined) {
                     objectField.collide(pos, vel);
                 }
@@ -236,6 +237,17 @@ function ParticleSystem() {
                 positionBuffer.array[idx+1] = pos.y;
                 positionBuffer.array[idx+2] = pos.z;
 
+
+                if(terrain != undefined) {
+                    var h = terrain.getHeight(pos.x, pos.z);
+
+                    if (h > pos.y) {
+                        terrain.addDecal(pos);
+
+                        lifeBuffer.array[i] = 0.0;
+                        sizeBuffer.array[i] = 0.0;
+                    }
+                }
             }
             else {
                 lifeBuffer.array[i] = 0.0;
