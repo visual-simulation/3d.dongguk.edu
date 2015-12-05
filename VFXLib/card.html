@@ -1,0 +1,392 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>three.js webgl</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            font-family: inconsolata;
+            background-color: #f0f0f0;
+            margin: 0px;
+            overflow: hidden;
+        }
+
+        #info {
+            color: #000;
+            position: absolute;
+            top: 50%;
+            width: 100%;
+        }
+
+        #note {
+            position: fixed;
+            bottom: 50%;
+            right: 50%;
+            padding: 8px;
+            color: #fff;
+            background-color: #555;
+            opacity: 0.8;
+        }
+
+
+        #d { text-align:left; margin:1em auto -9.5em; z-index:200; position:absolute; display:block;
+             background:rgba(0,0,0,0.3); padding:0.5em; border-radius:15px; -webkit-box-shadow: 0px 0px 10px rgba(0,0,0,0.3) }
+
+        #s { text-align:left; margin:1em auto -9.5em; z-index:200; position:absolute; display:block;
+            background:rgba(0,0,0,0.3); padding:0.5em; border-radius:15px; -webkit-box-shadow: 0px 0px 10px rgba(0,0,0,0.3) }
+
+    </style>
+</head>
+<body>
+
+<div id="d"></div>
+<div id="s"></div>
+
+
+<script src="./lib/three/build/three.min.js"></script>
+<script src="./lib/three/examples/js/libs/stats.min.js"></script>
+<script type="text/javascript" src="./dat.gui.min.js"></script>
+<script src="./lib/three/examples/js/controls/TrackballControls.js"></script>
+
+<script src="./lib/three/src/extras/geometries/TextGeometry.js"></script>
+<script src="./lib/three/src/extras/FontUtils.js"></script>
+
+<script src="./Nanum Pen Script_Regular.js"></script>
+
+<script src="./ParticleSystem.js"></script>
+<script src="./paticleParameter.js"></script>
+<script src="./FlowTexture.js"></script>
+<script src="./CardDecal.js"></script>
+
+
+<script>
+
+    function getParameterByName(name) {
+        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+                results = regex.exec(location.search);
+        return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    }
+
+    var container, stats;
+    var camera, scene, projector, renderer;
+    var mesh, animation;
+
+    var ps;
+
+    var gui;
+    var controls;
+
+    var textMaterial;
+    var textSize = 50;
+    var textHeight = 10;
+    var textTotalSize = 0;
+    var textMeshArray = [];
+
+    // Card bottom
+    var geoCardBottom;
+    var meshCardBottom;
+    var materialCardBottom;
+
+    var dx = 0;
+    var dy = -300;
+    var dz = -300;
+
+
+    var animated = false;
+
+
+    var cardDecalMainFront = new CardDecal();
+    cardDecalMainFront.initialize({width:1000, depth:1000, px:0+dx, py:0+dy, pz:0+dz, sx:1, sy:1, sz:1,
+        imagePath:'textures/christmas_card.jpg', color:'rgb(255, 255, 255)', side:THREE.FrontSide});
+    cardDecalMainFront.setRotateEnd(Math.PI*0.55);
+
+    var cardDecalMainBack = new CardDecal();
+    cardDecalMainBack.initialize({width:1000, depth:1000, px:0+dx, py:1.5+dy, pz:0+dz, sx:1, sy:-1, sz:1,
+        imagePath:'textures/christmas_latter.jpg', color:'rgb(255, 255, 255)', side:THREE.FrontSide});
+    cardDecalMainBack.setRotateEnd(Math.PI*0.55);
+
+    var cardDecalSub0 = new CardDecal();
+    cardDecalSub0.initialize({width:300, depth:500, px:200+dx, py:1+dy, pz:500+dz, sx:1, sy:1, sz:1,
+        imagePath:'textures/TreeChild_PringleHillStudio.png', color:'rgb(200, 200, 200)', side: THREE.DoubleSide});
+
+    var cardDecalSub1 = new CardDecal();
+    cardDecalSub1.initialize({width:300, depth:500, px:-300+dx, py:1+dy, pz:400+dz, sx:1, sy:1, sz:1,
+        imagePath:'textures/Little_girl.png', color:'rgb(200, 200, 200)', side: THREE.DoubleSide});
+
+
+    particleSystem = new ParticleSystem();
+    particleSystem.initialize(700);
+
+    particleSystem.setParameters(Examples.snowStorm);
+    particleSystem.setParameters({seedSize : 20});
+    particleSystem.setParameters({seedVelMag : 100});
+    particleSystem.setParameters({windStrength: 1.0});
+    particleSystem.setParameters({seedLife : 15});
+
+
+
+    init();
+    animate();
+    //loop();
+
+    function init() {
+
+
+        container = document.createElement( 'div' );
+        document.body.appendChild( container );
+
+        var d0 = document.getElementById('d');
+        d0.style.position = 'absolute';
+        d0.style.top = '10px';
+        d0.style.left = '10px';
+        d0.innerHTML += '<strong>Share this card</strong><br><em>'+location.href+'&shared=true'+'</em>';
+
+
+        var s0 = document.getElementById('s');
+        s0.style.position = 'absolute';
+        s0.style.bottom = '150px';
+        s0.style.left = '10px';
+        s0.innerHTML += '<a href="http://3d.dongguk.edu" target="_blank">Visit 3d.dongguk.edu</a>'
+
+
+        var shared = getParameterByName('shared');
+        if(shared == 'true') {
+            d0.style.display = 'none';
+        }
+
+        var note = document.createElement('div');
+        note.id = 'note';
+        //note.textContent = 'Click this card';
+        note.innerHTML = '<font color="#ffb6c1">Click this card</font>';
+
+
+        container.addEventListener('click', function(event) {
+            note.style.display = 'none';
+            animated = true;
+
+            for(var i=0; i<textMeshArray.length; i++) {
+                if(textMeshArray[i] != 0) {
+                    scene.add(textMeshArray[i]);
+                }
+            }
+        });
+
+        container.appendChild(note);
+
+
+        camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 10000 );
+        camera.setLens(22);
+
+        camera.position.x = -500;
+        camera.position.y = 1000;
+        camera.position.z = 1400;
+
+
+
+        scene = new THREE.Scene();
+
+        var light = new THREE.DirectionalLight( 0xffefef, 2 );
+        light.position.set( 1, 1, 1 ).normalize();
+        scene.add( light );
+
+
+        //terrain.addDecal(new THREE.Vector3(0.0, 0.0, 0.0));
+        var font_face = THREE.FontUtils.faces;
+
+        //
+        createTextMesh();
+
+
+        //bottom
+        geoCardBottom = new THREE.PlaneBufferGeometry(1000, 1000, 2, 2);
+        materialCardBottom = new THREE.MeshBasicMaterial( { color: 0x990000, shading: THREE.SmoothShading, side:THREE.DoubleSide });
+        meshCardBottom = new THREE.Mesh(geoCardBottom, materialCardBottom);
+
+
+        meshCardBottom.rotation.x = -0.5 * Math.PI;
+        meshCardBottom.position.x = dx;
+        meshCardBottom.position.y = dy;
+        meshCardBottom.position.z = 500 + dz;
+
+
+        scene.add(meshCardBottom);
+
+        scene.add(cardDecalMainFront.getMesh());
+        scene.add(cardDecalMainBack.getMesh());
+
+        scene.add(cardDecalSub0.getMesh());
+        scene.add(cardDecalSub0.getMeshBottom());
+
+        scene.add(cardDecalSub1.getMesh());
+        scene.add(cardDecalSub1.getMeshBottom());
+
+
+        particleSystem.getMesh().renderOrder = 100;
+        scene.add(particleSystem.getMesh());
+
+
+        //
+        renderer = new THREE.WebGLRenderer( { antialias: true } );
+        renderer.sortObjects = true;
+        renderer.setClearColor( new THREE.Color("rgb(200, 200, 200)") );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        container.appendChild(renderer.domElement);
+
+
+        //
+        controls = new THREE.TrackballControls(camera, renderer.domElement);
+
+        controls.rotateSpeed = 20.0;
+        controls.zoomSpeed = 5;
+        controls.panSpeed = 2;
+
+        controls.noZoom = false;
+        controls.noPan = false;
+
+        controls.staticMoving = true;
+        controls.dynamicDampingFactor = 0.3;
+
+
+        window.addEventListener( 'resize', onWindowResize, false );
+
+    }
+
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+    }
+
+    // Update Text
+
+    function createTextMesh() {
+
+        var Base64 = {_keyStr:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",encode:function(e){var t="";var n,r,i,s,o,u,a;var f=0;e=Base64._utf8_encode(e);while(f<e.length){n=e.charCodeAt(f++);r=e.charCodeAt(f++);i=e.charCodeAt(f++);s=n>>2;o=(n&3)<<4|r>>4;u=(r&15)<<2|i>>6;a=i&63;if(isNaN(r)){u=a=64}else if(isNaN(i)){a=64}t=t+this._keyStr.charAt(s)+this._keyStr.charAt(o)+this._keyStr.charAt(u)+this._keyStr.charAt(a)}return t},decode:function(e){var t="";var n,r,i;var s,o,u,a;var f=0;e=e.replace(/[^A-Za-z0-9\+\/\=]/g,"");while(f<e.length){s=this._keyStr.indexOf(e.charAt(f++));o=this._keyStr.indexOf(e.charAt(f++));u=this._keyStr.indexOf(e.charAt(f++));a=this._keyStr.indexOf(e.charAt(f++));n=s<<2|o>>4;r=(o&15)<<4|u>>2;i=(u&3)<<6|a;t=t+String.fromCharCode(n);if(u!=64){t=t+String.fromCharCode(r)}if(a!=64){t=t+String.fromCharCode(i)}}t=Base64._utf8_decode(t);return t},_utf8_encode:function(e){e=e.replace(/\r\n/g,"\n");var t="";for(var n=0;n<e.length;n++){var r=e.charCodeAt(n);if(r<128){t+=String.fromCharCode(r)}else if(r>127&&r<2048){t+=String.fromCharCode(r>>6|192);t+=String.fromCharCode(r&63|128)}else{t+=String.fromCharCode(r>>12|224);t+=String.fromCharCode(r>>6&63|128);t+=String.fromCharCode(r&63|128)}}return t},_utf8_decode:function(e){var t="";var n=0;var r=c1=c2=0;while(n<e.length){r=e.charCodeAt(n);if(r<128){t+=String.fromCharCode(r);n++}else if(r>191&&r<224){c2=e.charCodeAt(n+1);t+=String.fromCharCode((r&31)<<6|c2&63);n+=2}else{c2=e.charCodeAt(n+1);c3=e.charCodeAt(n+2);t+=String.fromCharCode((r&15)<<12|(c2&63)<<6|c3&63);n+=3}}return t}};
+
+        var text = getParameterByName('msg');
+        text = Base64.decode(text);
+
+        var font = 'nanum pen script';
+
+        for(var s=0; s<text.length; s++) {
+            if(text[s] == ' ') {
+                text = text.replace(' ', '\0');
+            }
+        }
+
+        var text_arr = text.split('\n');
+
+        textMaterial = new THREE.MeshFaceMaterial( [
+            new THREE.MeshPhongMaterial( { color: 0xff0000, shading: THREE.FlatShading } ), // front
+            new THREE.MeshPhongMaterial( { color: 0xff0000, shading: THREE.SmoothShading } ) // side
+        ] );
+
+        for(var i=0; i<text_arr.length; i++) {
+
+            if(text_arr[i].length == 0) {
+                textMeshArray.push(0);
+                continue;
+            }
+
+            var tgeo = new THREE.TextGeometry(text_arr[i], {
+                size: textSize, height: textHeight,
+                font: font
+            });
+
+            tgeo.computeBoundingBox();
+            tgeo.computeVertexNormals();
+
+            textTotalSize = textTotalSize + (tgeo.boundingBox.max.y - tgeo.boundingBox.min.y);
+
+            var tmesh = new THREE.Mesh(tgeo, textMaterial);
+
+            textMeshArray.push(tmesh);
+        }
+    }
+
+    function updateTextArray() {
+
+        for(var i=0; i<textMeshArray.length; i++) {
+
+            var mesh = textMeshArray[i];
+
+            if(mesh == 0) continue;
+
+            var textPosX = -0.5*(mesh.geometry.boundingBox.max.x+mesh.geometry.boundingBox.min.x);
+            var textPosY = -10;
+            var textPosZ = 600+textTotalSize*0.5-i*textSize*1.3;
+
+            mesh.matrix = new THREE.Matrix4();
+
+            var rotMatrix = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1,0,0), Math.PI*0.5);
+            mesh.applyMatrix(rotMatrix);
+
+            var posMatrix = new THREE.Matrix4().makeTranslation(textPosX, textPosY, textPosZ);
+            mesh.applyMatrix(posMatrix);
+
+
+            var aniMatrix = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(-1,0,0), cardDecalMainFront.getRotation());
+            mesh.applyMatrix(aniMatrix);
+
+            var cenMatrix = new THREE.Matrix4().makeTranslation(dx, dy, dz);
+            mesh.applyMatrix(cenMatrix);
+
+            mesh.updateMatrix();
+        }
+    }
+
+    //
+    var fps = 40;
+    var time;
+    var accTime = 0.0;
+
+    function animate() {
+
+        requestAnimationFrame(animate);
+
+
+        var now = new Date().getTime();
+        var dt = (now - (time||now))/1000;
+        time = now;
+
+        accTime += dt;
+
+        if(animated == true) {
+
+            controls.update();
+
+            cardDecalMainFront.update(0.5, dt);
+            cardDecalMainBack.update(0.5, dt);
+            cardDecalSub0.update(0.4, dt);
+            cardDecalSub1.update(0.3, dt);
+
+            updateTextArray();
+
+            //
+            var cen = new THREE.Vector3(0+dx,1200+dy,500+dz);
+            var nor = new THREE.Vector3(0,-1,0);
+            var rad = 800;
+
+            particleSystem.addParticlesFromDisk(10, cen, nor, rad);
+            particleSystem.updateParticles(dt);
+
+        }
+
+
+        render();
+    }
+
+    function render() {
+        renderer.render( scene, camera );
+    }
+
+</script>
+
+</body>
+</html>
