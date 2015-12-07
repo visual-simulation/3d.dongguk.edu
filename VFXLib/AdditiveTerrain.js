@@ -102,7 +102,7 @@ function AdditiveTerrain() {
         geometry.addAttribute('texCoord', new THREE.BufferAttribute(texCoords, 2));
 
         //
-        var tex = new THREE.ImageUtils.loadTexture("./textures/resizeFlame.jpg");
+        var tex = new THREE.ImageUtils.loadTexture("./textures/grass.jpg");
         tex.minFilter = THREE.LinearFilter;
         tex.magFilter = THREE.LinearFilter;
         tex.wrapS = THREE.RepeatWrapping;
@@ -128,7 +128,7 @@ function AdditiveTerrain() {
 
         // initialize decals
 
-        totalNum = 3000000;
+        totalNum = 100000;
         countNum = 0;
 
         decalPos = new THREE.BufferAttribute(new Float32Array(totalNum*3), 3);

@@ -45,7 +45,7 @@
 
 
     particleSystem = new ParticleSystem();
-    particleSystem.initialize(10000);
+    particleSystem.initialize(1000);
 
     particleSystem.setParameters(Examples.snowStorm);
     particleSystem.setParameters({seedSize : 3.1});
@@ -84,18 +84,6 @@
         //camera.position.x = -2;
         camera.position.z = 50;
 
-        controls = new THREE.TrackballControls(camera);
-
-        controls.rotateSpeed = 10.0;
-        controls.zoomSpeed = 5;
-        controls.panSpeed = 2;
-
-        controls.noZoom = false;
-        controls.noPan = false;
-
-        controls.staticMoving = true;
-        controls.dynamicDampingFactor = 0.3;
-
         scene = new THREE.Scene();
 
         //
@@ -129,6 +117,19 @@
         stats.domElement.style.position = 'absolute';
         stats.domElement.style.top = '0px';
         //container.appendChild( stats.domElement );
+
+
+        controls = new THREE.TrackballControls(camera, renderer.domElement);
+
+        controls.rotateSpeed = 10.0;
+        controls.zoomSpeed = 5;
+        controls.panSpeed = 2;
+
+        controls.noZoom = false;
+        controls.noPan = false;
+
+        controls.staticMoving = true;
+        controls.dynamicDampingFactor = 0.3;
 
         //
 
@@ -172,7 +173,6 @@
         particleSystem.updateParticles(dt, terrain);
 
 
-
         controls.update();
 
         requestAnimationFrame(render);
@@ -181,10 +181,7 @@
     }
 
     function render() {
-
         renderer.render( scene, camera );
-        controls.update();
-
     }
 
 </script>
