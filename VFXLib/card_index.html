@@ -31,7 +31,12 @@
             }
         }
 
-        window.location.href = encodeURI('card.html' + '?msg=' + msg);
+
+        // https://developer.mozilla.org/en-US/docs/Web/API/WindowBase64/btoa
+        var btoa = window.btoa(unescape(encodeURIComponent(msg)));
+        //var atob = decodeURIComponent(escape(window.atob(btoa)));
+
+        window.location.href = encodeURI('card.html' + '?msg=' + btoa);
     }
 
 </script>
