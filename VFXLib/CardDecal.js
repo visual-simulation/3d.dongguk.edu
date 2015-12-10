@@ -34,11 +34,32 @@ function CardDecal() {
         scaleZ = params.sz;
 
         var texture = THREE.ImageUtils.loadTexture(params.imagePath);
-        var cardMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff, shading: THREE.SmoothShading,
-            side:params.side, map:texture, transparent: true, depthTest: true, depthWrite:true } );
+        var textTexture = undefined;
+        var textUsed = 0.0;
+
+        if(params.canvas != undefined) {
+            textTexture = new THREE.Texture(params.canvas);
+            textTexture.needsUpdate = true;
+            textUsed = 1.0;
+        }
+
+        var upMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                texture : {type: 't', value: texture},
+                textTexture : {type: 't', value: textTexture},
+                textUsed : {type: 'f', value: textUsed},
+            },
+            vertexShader  : loadFileToString("./shaders/CardUpShader.vert"),
+            fragmentShader: loadFileToString("./shaders/CardUpShader.frag"),
+            side:params.side,
+            transparent : true,
+            depthTest : true,
+            depthWrite : true
+        });
+
 
         geometry = new THREE.PlaneBufferGeometry(width, depth, 2, 2);
-        mesh = new THREE.Mesh(geometry, cardMaterial);
+        mesh = new THREE.Mesh(geometry, upMaterial);
 
         mesh.matrix = new THREE.Matrix4();
 
@@ -67,7 +88,7 @@ function CardDecal() {
             },
             vertexShader  : loadFileToString("./shaders/CardShader.vert"),
             fragmentShader: loadFileToString("./shaders/CardShader.frag"),
-            side:THREE.DoubleSide,
+            side:params.side,
             transparent : true
         });
 
