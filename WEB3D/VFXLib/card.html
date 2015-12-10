@@ -44,22 +44,15 @@
 <div id="d"></div>
 <div id="s"></div>
 
-
 <script src="./lib/three/build/three.min.js"></script>
 <script src="./lib/three/examples/js/libs/stats.min.js"></script>
 <script type="text/javascript" src="./dat.gui.min.js"></script>
 <script src="./lib/three/examples/js/controls/TrackballControls.js"></script>
 
-<script src="./lib/three/src/extras/geometries/TextGeometry.js"></script>
-<script src="./lib/three/src/extras/FontUtils.js"></script>
-
-<script src="./Nanum Pen Script_Regular.js"></script>
-
 <script src="./ParticleSystem.js"></script>
 <script src="./paticleParameter.js"></script>
 <script src="./FlowTexture.js"></script>
 <script src="./CardDecal.js"></script>
-
 
 <script>
 
@@ -94,13 +87,22 @@
     var dy = -300;
     var dz = -300;
 
-
     var animated = false;
+
+    var canvas = document.createElement("Canvas");
+    canvas.width = 1024;
+    canvas.height = 1024;
+
+    var ctx = canvas.getContext("2d");
+
+    ctx.font = "50px MD개성체";
+    ctx.fillStyle = "red";
+    ctx.textAlign = "center";
 
 
     var cardDecalMainFront = new CardDecal();
     cardDecalMainFront.initialize({width:1000, depth:1000, px:0+dx, py:0+dy, pz:0+dz, sx:1, sy:1, sz:1,
-        imagePath:'textures/christmas_card.jpg', color:'rgb(255, 255, 255)', side:THREE.FrontSide});
+        imagePath:'textures/christmas_card.jpg', canvas:canvas, color:'rgb(255, 255, 255)', side:THREE.FrontSide});
     cardDecalMainFront.setRotateEnd(Math.PI*0.55);
 
     var cardDecalMainBack = new CardDecal();
@@ -125,7 +127,6 @@
     particleSystem.setParameters({seedVelMag : 100});
     particleSystem.setParameters({windStrength: 1.0});
     particleSystem.setParameters({seedLife : 15});
-
 
 
     init();
@@ -192,12 +193,8 @@
         light.position.set( 1, 1, 1 ).normalize();
         scene.add( light );
 
-
-        //terrain.addDecal(new THREE.Vector3(0.0, 0.0, 0.0));
-        var font_face = THREE.FontUtils.faces;
-
         //
-        createTextMesh();
+        createTextCanvas();
 
 
         //bottom
@@ -265,12 +262,10 @@
 
     // Update Text
 
-    function createTextMesh() {
+    function createTextCanvas() {
 
         var text = getParameterByName('msg');
         text = decodeURI(text);
-
-        var font = 'nanum pen script';
 
         for(var s=0; s<text.length; s++) {
             if(text[s] == ' ') {
@@ -280,31 +275,13 @@
 
         var text_arr = text.split('\n');
 
-        textMaterial = new THREE.MeshFaceMaterial( [
-            new THREE.MeshPhongMaterial( { color: 0xff0000, shading: THREE.FlatShading } ), // front
-            new THREE.MeshPhongMaterial( { color: 0xff0000, shading: THREE.SmoothShading } ) // side
-        ] );
+        var h = 50*1.2;
+        var y = canvas.height/2 - (h*text_arr.length/1.5);
 
         for(var i=0; i<text_arr.length; i++) {
 
-            if(text_arr[i].length == 0) {
-                textMeshArray.push(0);
-                continue;
-            }
+            ctx.fillText(text_arr[i], canvas.width/2, y+h*i);
 
-            var tgeo = new THREE.TextGeometry(text_arr[i], {
-                size: textSize, height: textHeight,
-                font: font
-            });
-
-            tgeo.computeBoundingBox();
-            tgeo.computeVertexNormals();
-
-            textTotalSize = textTotalSize + (tgeo.boundingBox.max.y - tgeo.boundingBox.min.y);
-
-            var tmesh = new THREE.Mesh(tgeo, textMaterial);
-
-            textMeshArray.push(tmesh);
         }
     }
 
