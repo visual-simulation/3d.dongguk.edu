@@ -295,7 +295,7 @@
     function createTextCanvas() {
 
         var text = getParameterByName('msg');
-        text = decodeURIComponent(escape(window.atob(text)));
+        text = decodeURIComponent(window.atob(text));
 
         for(var i=0; i<text.length; i++) {
 
