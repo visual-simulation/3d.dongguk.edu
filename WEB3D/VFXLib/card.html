@@ -47,12 +47,13 @@
 <script src="./lib/three/build/three.min.js"></script>
 <script src="./lib/three/examples/js/libs/stats.min.js"></script>
 <script type="text/javascript" src="./dat.gui.min.js"></script>
-<script src="./lib/three/examples/js/controls/TrackballControls.js"></script>
+<script src="./lib/three/examples/js/controls/OrbitControls.js"></script>
 
 <script src="./ParticleSystem.js"></script>
 <script src="./paticleParameter.js"></script>
 <script src="./FlowTexture.js"></script>
 <script src="./CardDecal.js"></script>
+<script src="./AdditiveTerrain.js"></script>
 
 <script>
 
@@ -98,6 +99,14 @@
     ctx.font = "50px MD개성체";
     ctx.fillStyle = "red";
     ctx.textAlign = "center";
+
+
+    var min = new THREE.Vector3(-500.0, -300.0, -500.0+200);
+    var max = new THREE.Vector3( 500.0, -300.0,  500.0+200);
+
+
+    var terrain = new AdditiveTerrain();
+    terrain.initialize(min, max, 20, 20, 5.0);
 
 
     var cardDecalMainFront = new CardDecal();
@@ -214,11 +223,20 @@
         scene.add(cardDecalMainFront.getMesh());
         scene.add(cardDecalMainBack.getMesh());
 
+        cardDecalSub0.getMesh().renderOrder = 50;
+        cardDecalSub0.getMeshBottom().renderOrder = 49;
         scene.add(cardDecalSub0.getMesh());
         scene.add(cardDecalSub0.getMeshBottom());
 
+        cardDecalSub1.getMesh().renderOrder = 60;
+        cardDecalSub1.getMeshBottom().renderOrder = 59;
         scene.add(cardDecalSub1.getMesh());
         scene.add(cardDecalSub1.getMeshBottom());
+
+
+        //scene.add(terrain.getMesh());
+        terrain.getDecalMesh().renderOrder = 1;
+        scene.add(terrain.getDecalMesh());
 
 
         particleSystem.getMesh().renderOrder = 100;
@@ -234,8 +252,9 @@
 
 
         //
-        controls = new THREE.TrackballControls(camera, renderer.domElement);
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
 
+        /*
         controls.rotateSpeed = 20.0;
         controls.zoomSpeed = 5;
         controls.panSpeed = 2;
@@ -243,9 +262,9 @@
         controls.noZoom = false;
         controls.noPan = false;
 
-        controls.staticMoving = true;
+        controls.staticMoving = false;
         controls.dynamicDampingFactor = 0.3;
-
+        */
 
         window.addEventListener( 'resize', onWindowResize, false );
 
@@ -349,7 +368,7 @@
             var rad = 800;
 
             particleSystem.addParticlesFromDisk(10, cen, nor, rad);
-            particleSystem.updateParticles(dt);
+            particleSystem.updateParticles(dt, terrain);
 
         }
 

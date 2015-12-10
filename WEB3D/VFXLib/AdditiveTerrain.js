@@ -11,6 +11,8 @@ function AdditiveTerrain() {
     var dx, dz;
     var du, dv;
 
+    var ptSize = 0.0;
+
     var positions;
     var indices;
     var texCoords;
@@ -36,10 +38,12 @@ function AdditiveTerrain() {
     var decalMesh;
 
 
-    this.initialize = function(vMin, vMax, iSize, jSize) {
+    this.initialize = function(vMin, vMax, iSize, jSize, _ptSize) {
 
         min = vMin.clone();
         max = vMax.clone();
+
+        ptSize = _ptSize;
 
         iRes = iSize;
         jRes = jSize;
@@ -49,6 +53,8 @@ function AdditiveTerrain() {
 
         du = 0.01;
         dv = 0.01;
+
+        max = new THREE.Vector3(min.x+iRes*dx, max.y, min.z+jRes*dz);
 
         var numTri = (iRes-1)*(jRes-1)*2;
 
@@ -71,7 +77,7 @@ function AdditiveTerrain() {
                 var height = Math.random() * 0.5;
 
                 positions[idx*3+0] = px;
-                positions[idx*3+1] = height;
+                positions[idx*3+1] = height + min.y;
                 positions[idx*3+2] = pz;
 
                 texCoords[idx*2+0] = pu;
@@ -128,7 +134,7 @@ function AdditiveTerrain() {
 
         // initialize decals
 
-        totalNum = 100000;
+        totalNum = 10000;
         countNum = 0;
 
         decalPos = new THREE.BufferAttribute(new Float32Array(totalNum*3), 3);
@@ -152,14 +158,10 @@ function AdditiveTerrain() {
             },
             vertexShader  : loadFileToString("./shaders/additiveTerrainShader.vert"),
             fragmentShader: loadFileToString("./shaders/additiveTerrainShader.frag"),
-            side: THREE.DoubleSide,
+            side: THREE.BackSide,
             transparent : true,
-            depthTest : true,
-            depthWrite : false,
-            blending : THREE.CustomBlending,
-            blendEquation : THREE.AddEquation,
-            blendSrc : THREE.SrcAlphaFactor,
-            blendDst : THREE.DstAlphaFactor
+            depthTest : false,
+            depthWrite : true
         });
 
 
@@ -256,9 +258,17 @@ function AdditiveTerrain() {
 
     this.addDecal = function(pos) {
 
-        if(countNum >= totalNum) return;
+        if(countNum >= totalNum) {
+            return;
+        }
 
-        var dd = 0.5;
+        var dd = ptSize;
+        var padx = dx*1.1;
+        var padz = dz*1.1;
+
+        if(pos.x >= max.x-padx || pos.x <= min.x+padx || pos.z >= max.z-padz || pos.z <= min.z+padz) {
+            return;
+        }
 
         var i = parseInt((pos.x-dd-min.x)/dx);
         var j = parseInt((pos.z+dd-min.z)/dz);
@@ -273,22 +283,6 @@ function AdditiveTerrain() {
         var v1 = new THREE.Vector3(x1, _this.getHeight(x1,z0)+0.01, z0);
         var v2 = new THREE.Vector3(x1, _this.getHeight(x1,z1)+0.01, z1);
         var v3 = new THREE.Vector3(x0, _this.getHeight(x0,z1)+0.01, z1);
-
-        /*
-        var nor = _this.getNormal(pos);
-
-        var dir1 = nor.clone();
-        dir1.multiplyScalar(dir1.dot((new THREE.Vector3).subVectors(v1, v0)));
-
-        var dir2 = nor.clone();
-        dir2.multiplyScalar(dir2.dot((new THREE.Vector3).subVectors(v2, v0)));
-
-        var dir3 = nor.clone();
-        dir3.multiplyScalar(dir3.dot((new THREE.Vector3).subVectors(v3, v0)));
-        */
-        // v1.sub(dir1);
-        // v2.sub(dir2);
-        // v3.sub(dir3);
 
         var ix = countNum*3;
 
@@ -314,8 +308,6 @@ function AdditiveTerrain() {
 
         decalPos.needsUpdate = true;
         decalTex.needsUpdate = true;
-        //decalGeometry.needsUpdate = true;
-        //decalMesh.needsUpdate = true;
     }
 
     this.getMesh = function() {
