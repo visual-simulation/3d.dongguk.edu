@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>three.js webgl</title>
+    <title>Christmas Card</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <style>
@@ -21,7 +21,7 @@
         }
 
         #note {
-            position: fixed;
+            position: absolute;
             bottom: 50%;
             right: 50%;
             padding: 8px;
@@ -62,6 +62,20 @@
         var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
                 results = regex.exec(location.search);
         return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    }
+
+    function getFrameHeight() {
+        if(window.frameElement != null) {
+            return window.frameElement.clientHeight;
+        }
+        return window.innerHeight;
+    }
+
+    function getFrameWidth() {
+        if(window.frameElement != null) {
+            return window.frameElement.clientWidth;
+        }
+        return window.innerWidth;
     }
 
     var container, stats;
@@ -121,11 +135,11 @@
 
     var cardDecalSub0 = new CardDecal();
     cardDecalSub0.initialize({width:300, depth:500, px:200+dx, py:1+dy, pz:500+dz, sx:1, sy:1, sz:1,
-        imagePath:'textures/TreeChild_PringleHillStudio.png', color:'rgb(200, 200, 200)', side: THREE.DoubleSide});
+        imagePath:'textures/TreeChild_PringleHillStudio_small.png', color:'rgb(200, 200, 200)', side: THREE.DoubleSide});
 
     var cardDecalSub1 = new CardDecal();
     cardDecalSub1.initialize({width:300, depth:500, px:-300+dx, py:1+dy, pz:400+dz, sx:1, sy:1, sz:1,
-        imagePath:'textures/Little_girl.png', color:'rgb(200, 200, 200)', side: THREE.DoubleSide});
+        imagePath:'textures/Little_girl_small.png', color:'rgb(200, 200, 200)', side: THREE.DoubleSide});
 
 
     particleSystem = new ParticleSystem();
@@ -187,7 +201,7 @@
         container.appendChild(note);
 
 
-        camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 10000 );
+        camera = new THREE.PerspectiveCamera( 60, getFrameWidth() / getFrameHeight(), 1, 10000 );
         camera.setLens(22);
 
         camera.position.x = -500;
@@ -247,36 +261,25 @@
         renderer = new THREE.WebGLRenderer( { antialias: true } );
         renderer.sortObjects = true;
         renderer.setClearColor( new THREE.Color("rgb(200, 200, 200)") );
-        renderer.setSize( window.innerWidth, window.innerHeight );
+        renderer.setSize( getFrameWidth(), getFrameHeight() );
         container.appendChild(renderer.domElement);
-
 
         //
         controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enabled = false;
 
-        /*
-        controls.rotateSpeed = 20.0;
-        controls.zoomSpeed = 5;
-        controls.panSpeed = 2;
 
-        controls.noZoom = false;
-        controls.noPan = false;
-
-        controls.staticMoving = false;
-        controls.dynamicDampingFactor = 0.3;
-        */
-
-        window.addEventListener( 'resize', onWindowResize, false );
+        window.addEventListener( 'resize', onWindowResize, true );
+        onWindowResize();
 
     }
 
     function onWindowResize() {
 
-        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.aspect = getFrameWidth()/getFrameHeight();
         camera.updateProjectionMatrix();
 
-        renderer.setSize( window.innerWidth, window.innerHeight );
-
+        renderer.setSize( getFrameWidth(), getFrameHeight() );
     }
 
     // Update Text
@@ -285,12 +288,6 @@
 
         var text = getParameterByName('msg');
         text = decodeURI(text);
-
-        for(var s=0; s<text.length; s++) {
-            if(text[s] == ' ') {
-                text = text.replace(' ', '\0');
-            }
-        }
 
         var text_arr = text.split('\n');
 
@@ -353,7 +350,8 @@
 
         if(animated == true) {
 
-            controls.update();
+            //controls.update();
+            controls.enabled = true;
 
             cardDecalMainFront.update(0.5, dt);
             cardDecalMainBack.update(0.5, dt);
