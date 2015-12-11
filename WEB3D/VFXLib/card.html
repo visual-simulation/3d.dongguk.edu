@@ -30,7 +30,6 @@
             opacity: 0.8;
         }
 
-
         #d { text-align:left; margin:1em auto -9.5em; z-index:200; position:absolute; display:block;
              background:rgba(0,0,0,0.3); padding:0.5em; border-radius:15px; -webkit-box-shadow: 0px 0px 10px rgba(0,0,0,0.3) }
 
@@ -41,6 +40,7 @@
 </head>
 <body>
 
+<button type="button" id="copy">Copy link to clipboard</button>
 <div id="d"></div>
 <div id="s"></div>
 
@@ -170,54 +170,49 @@
         container = document.createElement( 'div' );
         document.body.appendChild( container );
 
-        var d0 = document.getElementById('d');
-        d0.style.position = 'absolute';
-        d0.style.top = '10px';
-        d0.style.left = '10px';
-        d0.innerHTML += '<strong>Share this card</strong><br><em>'+location.href+'&shared=true'+'</em>';
+        var cp = document.getElementById('copy');
+        cp.style.position = 'absolute';
+        cp.style.left = '20px';
+        cp.style.top = '20px';
+        cp.style.width = '150px';
+        cp.style.height = '50px';
 
-        d0.addEventListener('click', function(event){
+
+        cp.addEventListener('click', function(){
             var textArea = document.createElement("textarea");
-            textArea.style.position = 'fixed';
-            textArea.style.top = 0;
-            textArea.style.left = 0;
-            textArea.style.width = '2em';
-            textArea.style.height = '2em';
-            textArea.style.padding = 0;
-            textArea.style.border = 'none';
-            textArea.style.outline = 'none';
-            textArea.style.boxShadow = 'none';
-            textArea.style.background = 'transparent';
+
             textArea.value = location.href+'&shared=true';
             document.body.appendChild(textArea);
 
             textArea.select();
 
             try {
-                // Now that we've selected the anchor text, execute the copy command
-                var successful = document.execCommand('copy');
-                var msg = successful ? 'successful' : 'unsuccessful';
-                console.log('Copy email command was ' + msg);
+                document.execCommand('copy');
+                window.alert('Link has been copied to clipboard');
             } catch(err) {
-                console.log('Oops, unable to copy');
             }
 
             document.body.removeChild(textArea);
-
         });
+
+        var shared = getParameterByName('shared');
+        if(shared == 'true') {
+            cp.style.display = 'none';
+        }
 
 
         var s0 = document.getElementById('s');
         s0.style.position = 'absolute';
-        s0.style.bottom = '150px';
-        s0.style.left = '10px';
+        s0.style.bottom = '160px';
+        s0.style.left = '20px';
         s0.innerHTML += '<a href="http://3d.dongguk.edu" target="_blank">Visit 3d.dongguk.edu</a>'
 
+        var d0 = document.getElementById('d');
+        d0.style.position = 'absolute';
+        d0.style.bottom = '160px';
+        d0.style.right = '20px';
+        d0.innerHTML += '<a href="http://3d.dongguk.edu/examples/card_index.html" target="_blank">Create New Card</a>'
 
-        var shared = getParameterByName('shared');
-        if(shared == 'true') {
-            d0.style.display = 'none';
-        }
 
         var note = document.createElement('div');
         note.id = 'note';
