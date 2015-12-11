@@ -7,7 +7,8 @@
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 
     <script src="./lib/three/build/three.min.js"></script>
-    <script src="./lib/three/examples/js/controls/TrackballControls.js"></script>
+    <script src="./lib/three/examples/js/controls/OrbitControls.js"></script>
+
 
     <script src="./lib/three/examples/js/Detector.js"></script>
     <script src="./lib/three/examples/js/libs/stats.min.js"></script>
@@ -43,11 +44,9 @@
             camera.position.x = 2.2;
             camera.position.z = 3;
 
-            controls = new THREE.TrackballControls(camera);
+            controls = new THREE.OrbitControls(camera);
 
-            controls.rotateSpeed = 10.0;
-            controls.zoomSpeed = 5;
-            controls.panSpeed = 2;
+            controls.rotateSpeed = 1.0;
 
             controls.noZoom = true;
             controls.noPan = true;
