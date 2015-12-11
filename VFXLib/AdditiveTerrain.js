@@ -38,12 +38,13 @@ function AdditiveTerrain() {
     var decalMesh;
 
 
-    this.initialize = function(vMin, vMax, iSize, jSize, _ptSize) {
+    this.initialize = function(vMin, vMax, iSize, jSize, _totalNum, _ptSize) {
 
         min = vMin.clone();
         max = vMax.clone();
 
         ptSize = _ptSize;
+        totalNum = _totalNum;
 
         iRes = iSize;
         jRes = jSize;
@@ -133,8 +134,6 @@ function AdditiveTerrain() {
         mesh = new THREE.Mesh(geometry, material);
 
         // initialize decals
-
-        totalNum = 10000;
         countNum = 0;
 
         decalPos = new THREE.BufferAttribute(new Float32Array(totalNum*3), 3);

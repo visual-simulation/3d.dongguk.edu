@@ -19,6 +19,8 @@
 <script src="./lib/three/build/three.min.js"></script>
 <script src="./lib/three/examples/js/libs/stats.min.js"></script>
 <script type="text/javascript" src="./dat.gui.min.js"></script>
+
+<script src="./lib/three/examples/js/controls/OrbitControls.js"></script>
 <script src="./lib/three/examples/js/controls/TrackballControls.js"></script>
 
 <script src="./ParticleSystem.js"></script>
@@ -39,7 +41,6 @@
     var controls;
 
 
-
     var min = new THREE.Vector3(-300.0, 0.0, -300.0);
     var max = new THREE.Vector3( 300.0, 0.0,  300.0);
 
@@ -55,7 +56,7 @@
 
 
     var terrain = new AdditiveTerrain();
-    terrain.initialize(min, max, 1000, 1000);
+    terrain.initialize(min, max, 1000, 1000, 100000, 0.5);
 
 
     init();
@@ -119,8 +120,8 @@
         //container.appendChild( stats.domElement );
 
 
-        controls = new THREE.TrackballControls(camera, renderer.domElement);
-
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+/*
         controls.rotateSpeed = 10.0;
         controls.zoomSpeed = 5;
         controls.panSpeed = 2;
@@ -130,7 +131,7 @@
 
         controls.staticMoving = true;
         controls.dynamicDampingFactor = 0.3;
-
+*/
         //
 
         window.addEventListener( 'resize', onWindowResize, false );
