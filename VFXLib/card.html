@@ -82,8 +82,7 @@
         var width = getFrameWidth();
         var height = getFrameHeight();
 
-        if(width > height) return width/height;
-        return height/width;
+        return width/height;
     }
 
     var container, stats;
@@ -111,6 +110,7 @@
     var dz = -300;
 
     var animated = false;
+    var reqAni;
 
     var canvas = document.createElement("Canvas");
     canvas.width = 1024;
@@ -272,14 +272,22 @@
         renderer.setSize( getFrameWidth(), getFrameHeight() );
         container.appendChild(renderer.domElement);
 
+        renderer.autocl
+
         //
         controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enabled = false;
 
 
-        window.addEventListener( 'resize', onWindowResize, true );
-        onWindowResize();
+        window.addEventListener( 'resize', onWindowResize, false)
+        window.addEventListener( 'beforeunload', onBeforeUnload, false);
 
+    }
+
+    function onBeforeUnload() {
+
+        window.cancelAnimationFrame(reqAni);
+        scene = null;
     }
 
     function onWindowResize() {
@@ -357,9 +365,8 @@
     var accTime = 0.0;
 
     function animate() {
-
-        requestAnimationFrame(animate);
-
+        onWindowResize();
+        reqAni = requestAnimationFrame(animate);
 
         var now = new Date().getTime();
         var dt = (now - (time||now))/1000;
