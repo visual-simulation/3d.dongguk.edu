@@ -5,7 +5,7 @@
     <title></title>
 
     <script src="./lib/three/build/three.min.js"></script>
-    <script src="./lib/three/examples/js/controls/TrackballControls.js"></script>
+    <script src="./lib/three/examples/js/controls/OrbitControls.js"></script>
     <script src="./lib/three/examples/js/SkyShader.js"></script>
 
     <script src="./lib/three/examples/js/loaders/VRMLLoader.js"></script>
@@ -82,11 +82,9 @@
             camera.position.x = 400;
             camera.position.z = 700;
 
-            controls = new THREE.TrackballControls( camera, renderer.domElement );
+            controls = new THREE.OrbitControls( camera, renderer.domElement );
 
-            controls.rotateSpeed = 10.0;
-            controls.zoomSpeed = 5;
-            controls.panSpeed = 2;
+            controls.rotateSpeed = 0.3;
 
             controls.noZoom = true;
             controls.noPan = true;
