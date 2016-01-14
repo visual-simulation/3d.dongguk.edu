@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>falling snow</title>
+    <style>
+        body {
+            font-family: Monospace;
+            background-color: #f0f0f0;
+            margin: 0px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<script src="./lib/three/build/three.min.js"></script>
+<script src="./lib/three/examples/js/libs/stats.min.js"></script>
+<script src="./lib/three/examples/js/controls/OrbitControls.js"></script>
+
+<script src="./ParticleSystem.js"></script>
+<script src="./paticleParameter.js"></script>
+
+<script src="./AdditiveTerrain.js"></script>
+
+<script>
+    var container;
+    var camera, scene, renderer;
+    var controls;
+
+    var min = new THREE.Vector3(-300, 0, -300);
+    var max = new THREE.Vector3( 300, 0,  300);
+    var iSize = 1000;
+    var jSize = 1000;
+    var totalNum = 100000;
+    var ptSize = 0.8;
+    var texPath = "./textures/desert6.jpg";
+    var dtexPath = "./textures/snowflake.png";
+
+    var terrain = new AdditiveTerrain();
+    terrain.initialize(min, max, iSize, jSize, totalNum, ptSize, texPath, dtexPath);
+
+    particleSystem = new ParticleSystem();
+    particleSystem.initialize(1000);
+
+    particleSystem.setParameters(Examples.snowStorm);
+
+    particleSystem.setParameters({seedSize : 3.1});
+    particleSystem.setParameters({seedVelMag : 100});
+    particleSystem.setParameters({windStrength: 0.5});
+    particleSystem.setParameters({seedLife : 10});
+
+    init();
+    loop();
+
+    function init() {
+
+        container = document.createElement( 'div' );
+        document.body.appendChild( container );
+
+        scene = new THREE.Scene();
+
+        camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.01, 10000 );
+        camera.setLens(18);
+        camera.position.y = 200;
+        camera.position.z = 400;
+
+        renderer = new THREE.WebGLRenderer( { antialias: true } );
+        renderer.setClearColor( 0xaaaaaa );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        container.appendChild(renderer.domElement);
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        scene.add(terrain.getMesh());
+        scene.add(terrain.getDecalMesh());
+
+        scene.add(particleSystem.getMesh());
+
+        window.addEventListener( 'resize', onWindowResize, false );
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+    }
+
+    var fps = 40;
+    var time;
+
+    function loop() {
+        setTimeout(loop, 1000/fps);
+
+        var now = new Date().getTime();
+        var dt = (now - (time||now))/1000;
+        time = now;
+
+        var cen = new THREE.Vector3(0,200,0);
+        var nor = new THREE.Vector3(0,-1,0);
+        var rad = 200;
+
+        particleSystem.addParticlesFromDisk(10, cen, nor, rad);
+        particleSystem.updateParticles(dt, terrain);
+
+        controls.update();
+
+        requestAnimationFrame(render);
+    }
+
+    function render() {
+        renderer.render( scene, camera );
+    }
+
+</script>
+
+</body>
+</html>
