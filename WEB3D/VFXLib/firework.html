@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fire Work</title>
+</head>
+<body>
+<script src="./lib/three/build/three.min.js"></script>
+<script src="./lib/three/examples/js/controls/OrbitControls.js"></script>
+<script src="./ParticleSystem.js"></script>
+<script src="./paticleParameter.js"></script>
+<script>
+    var container;
+    var camera, scene, renderer;
+    var controls;
+
+    particleSystem1 = new ParticleSystem();
+    particleSystem1.initialize(1000);
+    particleSystem1.setParameters(Examples.fireworks);
+
+    particleSystem2 = new ParticleSystem();
+    particleSystem2.initialize(1000);
+    particleSystem2.setParameters(Examples.fireworks);
+
+    particleSystem3 = new ParticleSystem();
+    particleSystem3.initialize(1000);
+    particleSystem3.setParameters(Examples.fireworks);
+
+    function init() {
+        container = document.createElement( 'div' );
+        document.body.appendChild( container );
+
+        camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.01, 10000 );
+        camera.setLens(18);
+        camera.position.y = 500;
+        camera.position.z = 1000;
+
+        scene = new THREE.Scene();
+
+        renderer = new THREE.WebGLRenderer( { antialias: true } );
+        renderer.setClearColor( 0x111111 );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        container.appendChild(renderer.domElement);
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        scene.add(particleSystem1.getMesh());
+        scene.add(particleSystem2.getMesh());
+        scene.add(particleSystem3.getMesh());
+
+        window.addEventListener( 'resize', onWindowResize, false );
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+    }
+
+    var fps = 40;
+    var time;
+
+    var rad = 5;
+    var dt;
+
+    var intervalTime1 = 1700;
+    var intervalTime2 = 1100;
+    var intervalTime3 = 1300;
+
+    function loop() {
+        setTimeout(loop, 1000/fps);
+
+        var now = new Date().getTime();
+        dt = (now - (time||now))/1000;
+        time = now;
+
+        particleSystem1.updateParticles(dt);
+        particleSystem2.updateParticles(dt);
+        particleSystem3.updateParticles(dt);
+
+        controls.update();
+
+        requestAnimationFrame(render);
+    }
+
+    function render() {
+        renderer.render( scene, camera );
+    }
+
+    function generate(ps, cen){
+        ps.addParticlesFromSphere(1000, cen, rad);
+    }
+
+    function getRandomInt( min, max ) {
+        return Math.floor( Math.random() * ( max - min + 1 ) ) + min;
+    }
+
+    function randomPos(){
+        var x = getRandomInt(-400, 400);
+        var y = getRandomInt(100, 400);
+        var z = getRandomInt(-300, 300);
+        var cen = new THREE.Vector3(x,y,z);
+
+        return cen;
+    }
+
+    function randomColor(){
+        var colorCode = Math.round(Math.random() * 0xffffff);
+        return colorCode;
+    }
+
+    function randomMag(){
+        var mag = getRandomInt(70,250);
+        return mag;
+    }
+
+    function doFirework1(){
+        var cen = randomPos();
+        particleSystem1.setParameters({particleColor: new THREE.Color(randomColor())});
+        particleSystem1.setParameters({seedVelMag: randomMag()});
+        generate(particleSystem1, cen);
+        setTimeout(doFirework1, intervalTime1);
+    }
+
+    function doFirework2(){
+        var cen = randomPos();
+        particleSystem2.setParameters({particleColor: new THREE.Color(randomColor())});
+        particleSystem2.setParameters({seedVelMag: randomMag()});
+        generate(particleSystem2,cen);
+        setTimeout(doFirework2, intervalTime2);
+    }
+
+    function doFirework3(){
+        var cen = randomPos();
+        particleSystem3.setParameters({particleColor: new THREE.Color(randomColor())});
+        particleSystem3.setParameters({seedVelMag: randomMag()});
+        generate(particleSystem3,cen);
+        setTimeout(doFirework3, intervalTime3);
+    }
+
+    init();
+    loop();
+    doFirework1();
+    doFirework2();
+    doFirework3();
+
+</script>
+</body>
+</html>
