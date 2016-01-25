@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Desert Wind</title>
+    <style>
+        body {
+            font-family: Monospace;
+            background-color: #f0f0f0;
+            margin: 0px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<script src="./lib/three/build/three.min.js"></script>
+<script src="./lib/three/examples/js/controls/OrbitControls.js"></script>
+<script src="./ParticleSystem.js"></script>
+<script src="./AdditiveTerrain.js"></script>
+<script>
+    var container;
+    var camera, scene, renderer;
+
+    var controls;
+
+    var min = new THREE.Vector3(-300, 0, -300);
+    var max = new THREE.Vector3( 300, 0,  300);
+    var iSize = 500;
+    var jSize = 500;
+    var totalNum = 0;
+    var ptSize = 0;
+    var texPath = "./textures/desert5.jpg";
+
+    var terrain = new AdditiveTerrain();
+    terrain.initialize(min, max, iSize, jSize, totalNum, ptSize, texPath);
+
+    particleSystem = new ParticleSystem();
+    particleSystem.initialize(500);
+
+    particleSystem.setParameters({seedSize : 1000});
+    particleSystem.setParameters({seedVelMag : 450});
+    particleSystem.setParameters({windStrength: 5});
+    particleSystem.setParameters({seedLife : 40});
+
+    particleSystem.setParameters({globalForce: new THREE.Vector3(-10, -200, 0)});
+    particleSystem.setParameters({seedVelDir: new THREE.Vector3(-1,0.2,0)});
+    particleSystem.setParameters({particleColor: new THREE.Color(0xcd853f)});
+    particleSystem.setParameters({alpha : 0.005});
+    particleSystem.setParameters({seedSpread : 0.1});
+
+    particleSystem.setParameters({texFile: "./textures/smokeparticle.png"});
+
+    init();
+    loop();
+
+    function init() {
+        container = document.createElement( 'div' );
+        document.body.appendChild( container );
+
+        camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.01, 10000 );
+        camera.setLens(18);
+        camera.position.y = 200;
+        camera.position.z = 400;
+
+        scene = new THREE.Scene();
+
+        renderer = new THREE.WebGLRenderer( { antialias: true } );
+        renderer.setClearColor( 0xaaaaaa );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        container.appendChild(renderer.domElement);
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        window.addEventListener( 'resize', onWindowResize, false );
+
+        scene.add(terrain.getMesh());
+        scene.add(particleSystem.getMesh());
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+    }
+
+    var fps = 40;
+    var time=0;
+
+    function loop() {
+        setTimeout(loop, 1000/fps);
+        var now = new Date().getTime();
+        var dt = (now - (time||now))/1000;
+        time = now;
+
+        var cen1 = new THREE.Vector3(270,0,-200);
+        var nor1 = new THREE.Vector3(1,0,0);
+        var rad1 = 80;
+
+        var cen2 = new THREE.Vector3(270,0,200);
+        var nor2 = new THREE.Vector3(1,0,0);
+        var rad2 = 100;
+
+        var cen3 = new THREE.Vector3(270,0,0);
+        var nor3 = new THREE.Vector3(1,0,0);
+        var rad3 = 80;
+
+        particleSystem.addParticlesFromDisk(2, cen1, nor1, rad1);
+        particleSystem.addParticlesFromDisk(2, cen2, nor2, rad2);
+        particleSystem.addParticlesFromDisk(2, cen3, nor3, rad3);
+        particleSystem.updateParticles(dt, terrain);
+
+        controls.update();
+
+        requestAnimationFrame(render);
+    }
+
+    function render() {
+        renderer.render( scene, camera );
+    }
+</script>
+</body>
+</html>
