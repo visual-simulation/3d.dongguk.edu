@@ -46,7 +46,45 @@ Examples = {
         texFile : "./textures/snowflake.png",
         particleColor: new THREE.Color(0Xfffafa),
         alpha : 1.0
+    },
+
+    send :
+    {
+        seedVelDir: new THREE.Vector3(-1,0.2,0),
+        seedVelMag: 350,
+        globalForce: new THREE.Vector3(100,-50,0),
+        windStrength: 5,
+        seedSize: 10.1,
+        seedLife: 50,
+        texFile: "./textures/smokeparticle.png",
+        // particleColor: new THREE.Color(0x8b4513),
+        alpha : 1.0
+    },
+
+    fireworks:
+    {
+        seedSize : 100,
+        seedVelMag : 200,
+        windStrength: 0,
+        seedLife : 1,
+        globalForce: new THREE.Vector3(0, -150, 0),
+        seedVelDir: new THREE.Vector3(0,0,0),
+        alpha : 1,
+        seedSpread : 1,
+        texFile: "./textures/spark.png"
+    },
+
+    twist:
+    {
+        seedVelDir: new THREE.Vector3(0,1,0),
+        seedVelMag: 0,
+        globalForce: new THREE.Vector3(0,0,0),
+        windStrength: 0,
+        seedSize: 350,
+        seedLife: 0.9,
+        seedSpread: 1,
+        texFile: "./textures/smokeparticle.png",
+        particleColor: new THREE.Color(0xffffff),
+        alpha : 0.07
     }
-
-
 }
