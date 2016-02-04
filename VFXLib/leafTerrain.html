@@ -41,24 +41,35 @@
     var controls;
 
 
-    var min = new THREE.Vector3(-300.0, 0.0, -300.0);
-    var max = new THREE.Vector3( 300.0, 0.0,  300.0);
-
 
     particleSystem = new ParticleSystem();
-    particleSystem.initialize(1000);
 
-    particleSystem.setParameters(Examples.snowStorm);
-    particleSystem.setParameters({seedSize : 3.1});
-    particleSystem.setParameters({seedVelMag : 100.3});
-    particleSystem.setParameters({windStrength: 0.5});
-    particleSystem.setParameters({seedLife : 10});
+
+    var psParams = {blendingType : THREE.NormalBlending};
+
+    particleSystem.initialize(1000, psParams);
+
+    particleSystem.setParameters({
+        seedVelDir: new THREE.Vector3(0.0,-1,0),
+        seedVelMag: 120.0,
+        globalForce: new THREE.Vector3(0, -0.1, 0),
+        windStrength: 10,
+        seedSize: 60,
+        seedLife: 5.0,
+        texFile: "./textures/leaf.png",
+        particleColor: new THREE.Color(0Xaaaa00),
+        angularVel : 0.005,
+        alpha: 1.0,
+    });
 
 
     var terrain = new AdditiveTerrain();
 
+    var min = new THREE.Vector3(-900.0, 0.0, -900.0);
+    var max = new THREE.Vector3( 900.0, 0.0,  900.0);
+
     var terrainParams = {terrainImage:"./textures/grass.jpg", decalImage:"./textures/leaf.png", decalColor:0xffaa00};
-    terrain.initialize(min, max, 1000, 1000, 100000, 0.5, terrainParams);
+    terrain.initialize(min, max, 100, 100, 10000, 20, terrainParams);
 
 
     init();
@@ -83,9 +94,9 @@
         camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.01, 10000 );
         camera.setLens(18);
 
-        camera.position.y = 10;
-        //camera.position.x = -2;
-        camera.position.z = 50;
+        camera.position.y = 200;
+        camera.position.x = 200;
+        camera.position.z = 500;
 
         scene = new THREE.Scene();
 
@@ -167,12 +178,12 @@
         stats.begin();
 
 
-        var cen = new THREE.Vector3(0,200,0);
+        var cen = new THREE.Vector3(0,500,0);
         var nor = new THREE.Vector3(0,-1,0);
-        var rad = 200;
+        var rad = 500;
 
 
-        particleSystem.addParticlesFromDisk(10, cen, nor, rad);
+        particleSystem.addParticlesFromDisk(2, cen, nor, rad);
         particleSystem.updateParticles(dt, terrain);
 
 

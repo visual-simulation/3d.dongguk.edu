@@ -25,6 +25,9 @@ function AdditiveTerrain() {
 
     // textures
 
+    var terrainColor = 0xffffff;
+    var decalColor = 0xffffff;
+
 
     // decals
     var totalNum;
@@ -38,7 +41,7 @@ function AdditiveTerrain() {
     var decalMesh;
 
 
-    this.initialize = function(vMin, vMax, iSize, jSize, _totalNum, _ptSize) {
+    this.initialize = function(vMin, vMax, iSize, jSize, _totalNum, _ptSize, params) {
 
         min = vMin.clone();
         max = vMax.clone();
@@ -75,7 +78,8 @@ function AdditiveTerrain() {
                 var pu = i*du;
                 var pv = j*dv;
 
-                var height = Math.random() * 0.5;
+                //var height = Math.random() * 0.5;
+                var height = 0.0;
 
                 positions[idx*3+0] = px;
                 positions[idx*3+1] = height + min.y;
@@ -108,8 +112,28 @@ function AdditiveTerrain() {
         geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
         geometry.addAttribute('texCoord', new THREE.BufferAttribute(texCoords, 2));
 
+
+        var tex;
+        var dTex;
+
+        if(params != undefined) {
+
+            if(params.terrainColor != undefined) {
+                terrainColor = params.terrainColor;
+            }
+            if(params.decalColor != undefined) {
+                decalColor = params.decalColor;
+            }
+            if(params.terrainImage != undefined) {
+                tex = new THREE.ImageUtils.loadTexture(params.terrainImage);
+            }
+            if(params.decalImage != undefined) {
+                dTex = new THREE.ImageUtils.loadTexture(params.decalImage);
+            }
+        }
+
         //
-        var tex = new THREE.ImageUtils.loadTexture("./textures/grass.jpg");
+
         tex.minFilter = THREE.LinearFilter;
         tex.magFilter = THREE.LinearFilter;
         tex.wrapS = THREE.RepeatWrapping;
@@ -122,12 +146,14 @@ function AdditiveTerrain() {
                 texCoord : {type:'v2', value: null},
             },
             uniforms: {
-                texture  : {type: 't', value: tex}
+
+                texture  : {type: 't', value: tex},
+                color    : {type: 'c', value: new THREE.Color(terrainColor)}
             },
             vertexShader  : loadFileToString("./shaders/additiveTerrainShader.vert"),
             fragmentShader: loadFileToString("./shaders/additiveTerrainShader.frag"),
             side: THREE.DoubleSide,
-            //wireframe: true
+            //wireframe: false
         });
 
         //
@@ -145,22 +171,21 @@ function AdditiveTerrain() {
         decalGeometry.addAttribute('texCoord', decalTex);
 
 
-        var dTex = new THREE.ImageUtils.loadTexture("./textures/snowflake.png");
-
         decalMaterial = new THREE.ShaderMaterial({
             attributes: {
                 position : {type:'v3', value: null},
                 texCoord : {type:'v2', value: null},
             },
             uniforms: {
-                texture  : {type: 't', value: dTex}
+                texture  : {type: 't', value: dTex},
+                color    : {type: 'c', value: new THREE.Color(decalColor)}
             },
             vertexShader  : loadFileToString("./shaders/additiveTerrainShader.vert"),
             fragmentShader: loadFileToString("./shaders/additiveTerrainShader.frag"),
             side: THREE.BackSide,
             transparent : true,
-            depthTest : false,
-            depthWrite : true
+            depthTest : true,
+            depthWrite : false
         });
 
 
@@ -261,7 +286,7 @@ function AdditiveTerrain() {
             return;
         }
 
-        var dd = ptSize;
+        var dd = (ptSize*Math.random()*0.5) + ptSize*0.5;
         var padx = dx*1.1;
         var padz = dz*1.1;
 
@@ -272,16 +297,36 @@ function AdditiveTerrain() {
         var i = parseInt((pos.x-dd-min.x)/dx);
         var j = parseInt((pos.z+dd-min.z)/dz);
 
-        var x0 = pos.x-dd;
-        var x1 = pos.x+dd;
+        var theta = Math.PI*0.5*(0.5-Math.random());
 
-        var z0 = pos.z-dd;
-        var z1 = pos.z+dd;
+        var c = Math.cos(theta);
+        var s = Math.sin(theta);
 
-        var v0 = new THREE.Vector3(x0, _this.getHeight(x0,z0)+0.01, z0);
-        var v1 = new THREE.Vector3(x1, _this.getHeight(x1,z0)+0.01, z0);
-        var v2 = new THREE.Vector3(x1, _this.getHeight(x1,z1)+0.01, z1);
-        var v3 = new THREE.Vector3(x0, _this.getHeight(x0,z1)+0.01, z1);
+        var x0 = +dd, z0 = +dd;
+        var x1 = -dd, z1 = -dd;
+
+        if(Math.random() > 0.5) {
+            x0 = -dd; z0 = -dd;
+            x1 = +dd; z1 = +dd;
+        }
+
+        var v0 = new THREE.Vector3(x0, _this.getHeight(x0,z0)+5.0, z0);
+        var v1 = new THREE.Vector3(x1, _this.getHeight(x1,z0)+5.0, z0);
+        var v2 = new THREE.Vector3(x1, _this.getHeight(x1,z1)+5.0, z1);
+        var v3 = new THREE.Vector3(x0, _this.getHeight(x0,z1)+5.0, z1);
+
+        v0.setX((v0.x)*c - (v0.z)*s + pos.x);
+        v0.setZ((v0.x)*s + (v0.z)*c + pos.z);
+
+        v1.setX((v1.x)*c - (v1.z)*s + pos.x);
+        v1.setZ((v1.x)*s + (v1.z)*c + pos.z);
+
+        v2.setX((v2.x)*c - (v2.z)*s + pos.x);
+        v2.setZ((v2.x)*s + (v2.z)*c + pos.z);
+
+        v3.setX((v3.x)*c - (v3.z)*s + pos.x);
+        v3.setZ((v3.x)*s + (v3.z)*c + pos.z);
+
 
         var ix = countNum*3;
 
@@ -305,6 +350,9 @@ function AdditiveTerrain() {
 
         countNum += 6;
 
+        decalMesh.geometry.drawcalls.pop();
+        decalMesh.geometry.addDrawCall(0, countNum, 0);
+
         decalPos.needsUpdate = true;
         decalTex.needsUpdate = true;
     }
@@ -315,5 +363,9 @@ function AdditiveTerrain() {
 
     this.getDecalMesh = function() {
         return decalMesh;
+    }
+
+    this.clearDecals = function() {
+        countNum = 0;
     }
 }
