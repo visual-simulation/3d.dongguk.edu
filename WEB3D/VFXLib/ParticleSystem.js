@@ -15,7 +15,8 @@ function ParticleSystem() {
     var velocityBuffer;
     var lifeBuffer;
     var sizeBuffer;
-    var shapeBuffer;
+    var rotationBuffer;
+    var angularBuffer;
 
     var total;
     var count;
@@ -27,6 +28,9 @@ function ParticleSystem() {
     var seedLife;
     var seedSize;
     var seedSpread;
+    var angularVel = 0.0;
+
+    var blendingType = THREE.CustomBlending;
 
     var particleColor;
 
@@ -43,6 +47,50 @@ function ParticleSystem() {
     //
     var objectField;
 
+    this.setParticle = function(i, params) {
+        var idx = i*3;
+
+        if(params.position != undefined) {
+            positionBuffer.array[idx + 0] = params.position.x;
+            positionBuffer.array[idx + 1] = params.position.y;
+            positionBuffer.array[idx + 2] = params.position.z;
+        }
+
+        if(params.velocity != undefined) {
+            positionBuffer.array[idx + 0] = params.velocity.x;
+            velocityBuffer.array[idx + 1] = params.velocity.y;
+            velocityBuffer.array[idx + 2] = params.velocity.z;
+        }
+
+        if(params.life != undefined) {
+            lifeBuffer.array[i] = params.life;
+        }
+
+        if(params.size != undefined) {
+            sizeBuffer.array[i] = params.size;
+        }
+
+        if(params.rotate != undefined) {
+            rotationBuffer.array[i] = params.rotate;
+        }
+    }
+
+    this.getParticle = function(i) {
+        var idx = i*3;
+        return {position: new THREE.Vector3(positionBuffer.array[idx+0], positionBuffer.array[idx+1], positionBuffer.array[idx+2]),
+                velocity: new THREE.Vector3(positionBuffer.array[idx+0], positionBuffer.array[idx+1], positionBuffer.array[idx+2]),
+                life: lifeBuffer.array[i],
+                size: sizeBuffer.array[i],
+                rotate: rotationBuffer.array[i]};
+    }
+
+    this.getCount = function() {
+        return count;
+    }
+    this.getTail = function() {
+        return tail;
+    }
+
     this.setObstacleField = function(field) {
         objectField = field;
     }
@@ -55,6 +103,9 @@ function ParticleSystem() {
         }
         if(params.seedVelMag != undefined) {
             seedVelMag = params.seedVelMag;
+        }
+        if(params.angularVel != undefined) {
+            angularVel = params.angularVel;
         }
         if(params.seedLife != undefined) {
             seedLife = params.seedLife;
@@ -90,15 +141,23 @@ function ParticleSystem() {
             pointMaterial.needsUpdate = true;
         }
 
+
     }
 
-    this.initialize = function(_total) {
+    this.initialize = function(_total, params) {
+
+        if(params != undefined){
+
+            if(params.blendingType != undefined) {
+                blendingType = params.blendingType
+            }
+        }
 
         seedVelDir = new THREE.Vector3(0, 1, 0);
         seedVelMag = 0.1;
         seedLife = 3;
         seedSize = 0.1;
-        seedSpread = 0.2;
+        seedSpread = 0.0;
         globalForce = new THREE.Vector3(0, 0, 0);
 
         //
@@ -111,7 +170,8 @@ function ParticleSystem() {
         velocityBuffer = new THREE.BufferAttribute(new Float32Array(total*3),3);
         lifeBuffer     = new THREE.BufferAttribute(new Float32Array(total*1),1);
         sizeBuffer     = new THREE.BufferAttribute(new Float32Array(total*1),1);
-        shapeBuffer    = new THREE.BufferAttribute(new Float32Array(total*1),1);
+        rotationBuffer = new THREE.BufferAttribute(new Float32Array(total*1),1);
+        angularBuffer  = new THREE.BufferAttribute(new Float32Array(total*1),1);
 
         // initialize three.js Mesh
         pointGeometry = new THREE.BufferGeometry();
@@ -120,12 +180,12 @@ function ParticleSystem() {
         pointGeometry.addAttribute('velocity', velocityBuffer);
         pointGeometry.addAttribute('life'    , lifeBuffer);
         pointGeometry.addAttribute('size'    , sizeBuffer);
-        pointGeometry.addAttribute('shape'   , shapeBuffer);
+        pointGeometry.addAttribute('rotate'  , rotationBuffer);
 
 
-        var tex = new THREE.ImageUtils.loadTexture("./textures/flame.png");
-        tex.minFilter = THREE.LinearFilter;
-        tex.magFilter = THREE.LinearFilter;
+        //var tex = new THREE.ImageUtils.loadTexture();
+        //tex.minFilter = THREE.LinearFilter;
+        //tex.magFilter = THREE.LinearFilter;
 
         pointMaterial = new THREE.ShaderMaterial({
             attributes: {
@@ -133,56 +193,31 @@ function ParticleSystem() {
                 velocity : {type:'v3', value: null},
                 life     : {type:'f' , value: null},
                 size     : {type:'f' , value: null},
-                shape    : {type:'f' , value: null}
+                rotate   : {type:'f' , value: null}
             },
             uniforms: {
-                color    : {type: 'c', value: new THREE.Color(0xffffff)},
-                texture  : {type: 't', value: tex},
+                color    : {type: 'c', value: new THREE.Color(0xff0000)},
+                texture  : {type: 't', value: null},
                 maxLife  : {type: 'f', value: seedLife},
-                alpha    : {type: 'f', value: 1.0}
+                alpha    : {type: 'f', value: 0.0}
             },
             vertexShader  : loadFileToString("./shaders/pointCloudVert.glsl"),
             fragmentShader: loadFileToString("./shaders/pointCloudFrag.glsl"),
             transparent : true,
             depthTest : true,
             depthWrite : false,
-            blending : THREE.CustomBlending,
+            blending : blendingType,
             blendEquation : THREE.AddEquation,
             blendSrc : THREE.SrcAlphaFactor,
             blendDst : THREE.DstAlphaFactor
-});
+        });
 
-basicMaterial = new THREE.PointCloudMaterial({
-    color: 0x0000ff
-});
-basicMaterial.size = 10.0;
+        basicMaterial = new THREE.PointCloudMaterial({
+            color: 0x0000ff
+        });
+        basicMaterial.size = 10.0;
 
-pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
-}
-
-    this.spreadForce = function(acc) {
-
-        if(Math.random() < 0.3) return acc.clone();
-
-        return acc.clone();
-
-        var dir = new THREE.Vector3((Math.random()-0.5), (Math.random()-0.5), (Math.random()-0.5));
-        dir.normalize();
-
-        if(dir.dot(acc) < 0.0) {
-            dir.multiplyScalar(-1);
-        }
-
-        var accMag = acc.length();
-        var accDir = new THREE.Vector3(acc.x, acc.y, acc.z);
-        accDir.normalize();
-
-        var spreadAcc = new THREE.Vector3();
-        spreadAcc.addVectors(accDir, dir.multiplyScalar(2));
-        spreadAcc.normalize();
-        spreadAcc.multiplyScalar(accMag);
-
-        return spreadAcc;
+        pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
     }
 
     this.updateParticles = function(dt, terrain) {
@@ -237,6 +272,8 @@ pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
                 positionBuffer.array[idx+1] = pos.y;
                 positionBuffer.array[idx+2] = pos.z;
 
+                rotationBuffer.array[i] += angularBuffer.array[i]*100;
+
 
                 if(terrain != undefined) {
                     var h = terrain.getHeight(pos.x, pos.z);
@@ -262,7 +299,7 @@ pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
         velocityBuffer.needsUpdate = true;
         lifeBuffer.needsUpdate     = true;
         sizeBuffer.needsUpdate     = true;
-        shapeBuffer.needsUpdate    = true;
+        rotationBuffer.needsUpdate = true;
 
         pointGeometry.computeBoundingBox();
         pointGeometry.computeBoundingSphere();
@@ -292,9 +329,10 @@ pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
 
         var idx = i*3;
 
-        lifeBuffer.array[i]  = Math.random()*seedLife;
-        sizeBuffer.array[i]  = Math.random()*seedSize;
-        shapeBuffer.array[i] = Math.random()*Math.PI*2.0;
+        lifeBuffer.array[i] = seedLife;
+        sizeBuffer.array[i] = Math.random()*seedSize;
+        rotationBuffer.array[i] = Math.random()*Math.PI*2.0;
+        angularBuffer.array[i] = Math.random()*angularVel;
 
         positionBuffer.array[idx+0] = pos.x;
         positionBuffer.array[idx+1] = pos.y;
@@ -306,6 +344,30 @@ pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
 
         count += 1;
         tail = Math.max(i, tail);
+    }
+
+
+    this.addParticle2 = function(pos, vel) {
+
+        var i = count++;
+        var idx = i*3;
+
+        tail = Math.max(i, tail);
+
+        lifeBuffer.array[i]  = 100.0;
+        sizeBuffer.array[i]  = Math.random()*seedSize;
+        rotationBuffer.array[i] = Math.random()*Math.PI*2.0;
+        angularBuffer.array[i] = Math.random()*angularVel;
+
+        positionBuffer.array[idx+0] = pos.x;
+        positionBuffer.array[idx+1] = pos.y;
+        positionBuffer.array[idx+2] = pos.z;
+
+        velocityBuffer.array[idx+0] = vel.x;
+        velocityBuffer.array[idx+1] = vel.y;
+        velocityBuffer.array[idx+2] = vel.z;
+
+
     }
 
     this.addParticlesFromSphere = function(num, center, rad) {
@@ -378,6 +440,7 @@ pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
     this.getMesh = function() {
         pointMesh.geometry.drawcalls.pop();
         pointMesh.geometry.addDrawCall(0,tail+1,0);
+        pointMesh.renderOrder = 1000;
         return pointMesh;
     }
 }
