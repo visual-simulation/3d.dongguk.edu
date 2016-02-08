@@ -276,9 +276,10 @@ function ParticleSystem() {
 
 
                 if(terrain != undefined) {
+
                     var h = terrain.getHeight(pos.x, pos.z);
 
-                    if (h > pos.y) {
+                    if (h >= pos.y) {
                         terrain.addDecal(pos);
 
                         lifeBuffer.array[i] = 0.0;

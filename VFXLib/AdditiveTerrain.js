@@ -14,8 +14,12 @@ function AdditiveTerrain() {
     var ptSize = 0.0;
 
     var positions;
+    var normals;
     var indices;
     var texCoords;
+
+    var positionAttrib;
+    var normalAttrib;
 
     //
 
@@ -55,17 +59,21 @@ function AdditiveTerrain() {
         dx = (max.x - min.x) / iRes;
         dz = (max.z - min.z) / jRes;
 
-        du = 0.01;
-        dv = 0.01;
+        du = 0.1;
+        dv = 0.1;
 
         max = new THREE.Vector3(min.x+iRes*dx, max.y, min.z+jRes*dz);
 
         var numTri = (iRes-1)*(jRes-1)*2;
 
         positions = new Float32Array(iRes*jRes*3);
+        normals   = new Float32Array(iRes*jRes*3);
         texCoords = new Float32Array(iRes*jRes*2);
-        indices = new Uint32Array(numTri*3);
 
+        indices   = new Uint32Array(numTri*3);
+
+        positionAttrib = new THREE.BufferAttribute(positions, 3);
+        normalAttrib = new THREE.BufferAttribute(normals, 3);
 
         for(var j=0; j<jRes; j++) {
             for(var i=0; i<iRes; i++) {
@@ -82,11 +90,38 @@ function AdditiveTerrain() {
                 var height = 0.0;
 
                 positions[idx*3+0] = px;
-                positions[idx*3+1] = height + min.y;
+                positions[idx*3+1] = height+min.y;
                 positions[idx*3+2] = pz;
 
                 texCoords[idx*2+0] = pu;
                 texCoords[idx*2+1] = pv;
+            }
+        }
+
+        for(var j=1; j<=jRes-2; j++) {
+            for(var i=1; i<=iRes-2; i++) {
+
+                var idx = j*iRes + i;
+
+                var v0 = new THREE.Vector3(
+                    positionAttrib.array[(idx+1)*3+0]-positionAttrib.array[(idx-1)*3+0],
+                    positionAttrib.array[(idx+1)*3+1]-positionAttrib.array[(idx-1)*3+1],
+                    positionAttrib.array[(idx+1)*3+2]-positionAttrib.array[(idx-1)*3+2]
+                );
+
+                var v1 = new THREE.Vector3(
+                    positionAttrib.array[(idx+iRes)*3+0]-positionAttrib.array[(idx-iRes)*3+0],
+                    positionAttrib.array[(idx+iRes)*3+1]-positionAttrib.array[(idx-iRes)*3+1],
+                    positionAttrib.array[(idx+iRes)*3+2]-positionAttrib.array[(idx-iRes)*3+2]
+                );
+
+                var nor = new THREE.Vector3();
+                nor = nor.crossVectors(v0, v1);
+                nor = nor.normalize(nor);
+
+                normalAttrib.array[idx*3+0] = nor.x;
+                normalAttrib.array[idx*3+1] = nor.y;
+                normalAttrib.array[idx*3+2] = nor.z;
             }
         }
 
@@ -108,12 +143,14 @@ function AdditiveTerrain() {
 
         geometry = new THREE.BufferGeometry();
 
-        geometry.addAttribute('index', new THREE.BufferAttribute(indices, 3));
-        geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
-        geometry.addAttribute('texCoord', new THREE.BufferAttribute(texCoords, 2));
-
+        geometry.addAttribute('position', positionAttrib);
+        geometry.addAttribute('normal'  , normalAttrib);
+        geometry.addAttribute('uv'      , new THREE.BufferAttribute(texCoords, 2));
+        geometry.addAttribute('index'   , new THREE.BufferAttribute(indices  , 3));
 
         var tex;
+        var tex2;
+
         var dTex;
 
         if(params != undefined) {
@@ -126,6 +163,21 @@ function AdditiveTerrain() {
             }
             if(params.terrainImage != undefined) {
                 tex = new THREE.ImageUtils.loadTexture(params.terrainImage);
+                tex.minFilter = THREE.LinearFilter;
+                tex.magFilter = THREE.LinearFilter;
+                tex.wrapS = THREE.RepeatWrapping;
+                tex.wrapT = THREE.RepeatWrapping;
+                tex.repeat.set(100, 100);
+
+                tex2 = tex;
+            }
+            if(params.terrainImage1 != undefined) {
+                tex2 = new THREE.ImageUtils.loadTexture(params.terrainImage1);
+                tex2.minFilter = THREE.LinearFilter;
+                tex2.magFilter = THREE.LinearFilter;
+                tex2.wrapS = THREE.RepeatWrapping;
+                tex2.wrapT = THREE.RepeatWrapping;
+                tex2.repeat.set(100, 100);
             }
             if(params.decalImage != undefined) {
                 dTex = new THREE.ImageUtils.loadTexture(params.decalImage);
@@ -134,30 +186,37 @@ function AdditiveTerrain() {
 
         //
 
-        tex.minFilter = THREE.LinearFilter;
-        tex.magFilter = THREE.LinearFilter;
-        tex.wrapS = THREE.RepeatWrapping;
-        tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(100, 100);
-
         material = new THREE.ShaderMaterial({
             attributes: {
                 position : {type:'v3', value: null},
-                texCoord : {type:'v2', value: null},
+                normal   : {type:'v3', value: null},
+                uv       : {type:'v2', value: null},
             },
             uniforms: {
-
                 texture  : {type: 't', value: tex},
-                color    : {type: 'c', value: new THREE.Color(terrainColor)}
+                texture2 : {type: 't', value: tex2},
+                color    : {type: 'c', value: new THREE.Color(terrainColor)},
+
+                topColor:    { type: "c", value: new THREE.Color( 0x0077ff ) },
+                bottomColor: { type: "c", value: new THREE.Color( 0xffffff ) },
+                offset:      { type: "f", value: 33 },
+                exponent:    { type: "f", value: 0.6 },
+                fogColor:    { type: "c", value: new THREE.Color( 0xff0000 ) },
+                fogNear:     { type: "f", value: 100 },
+                fogFar:      { type: "f", value: 1000 }
+
+
             },
             vertexShader  : loadFileToString("./shaders/additiveTerrainShader.vert"),
             fragmentShader: loadFileToString("./shaders/additiveTerrainShader.frag"),
             side: THREE.DoubleSide,
-            //wireframe: false
+            wireframe: false,
+            fog: true
         });
 
         //
         mesh = new THREE.Mesh(geometry, material);
+        mesh.receiveShadow = true;
 
         // initialize decals
         countNum = 0;
@@ -168,20 +227,12 @@ function AdditiveTerrain() {
         decalGeometry = new THREE.BufferGeometry();
 
         decalGeometry.addAttribute('position', decalPos);
-        decalGeometry.addAttribute('texCoord', decalTex);
+        decalGeometry.addAttribute('uv', decalTex);
 
 
-        decalMaterial = new THREE.ShaderMaterial({
-            attributes: {
-                position : {type:'v3', value: null},
-                texCoord : {type:'v2', value: null},
-            },
-            uniforms: {
-                texture  : {type: 't', value: dTex},
-                color    : {type: 'c', value: new THREE.Color(decalColor)}
-            },
-            vertexShader  : loadFileToString("./shaders/additiveTerrainShader.vert"),
-            fragmentShader: loadFileToString("./shaders/additiveTerrainShader.frag"),
+        decalMaterial = new THREE.MeshBasicMaterial({
+            map: dTex,
+            color: new THREE.Color(decalColor),
             side: THREE.BackSide,
             transparent : true,
             depthTest : true,
@@ -192,92 +243,90 @@ function AdditiveTerrain() {
         decalMesh = new THREE.Mesh(decalGeometry, decalMaterial);
     }
 
-    this.getNormal = function(pos) {
+    this.getHeight = function(x, z) {
 
-        var i = parseInt((pos.x-min.x)/dx);
-        var j = parseInt((pos.z-min.z)/dz);
+        var i = parseInt((x-min.x)/dx);
+        var j = parseInt((z-min.z)/dz);
 
         var idx = parseInt(j*iRes+i);
 
-        var p = new THREE.Vector3(pos.x, 0.0, pos.z);
+        var p = new THREE.Vector2((min.x)+i*dx, (min.z)+j*dz);
 
-        var q0 = new THREE.Vector3(min.x+(i+1)*dx, 0.0, min.z+j*dz);
-        var q1 = new THREE.Vector3(min.x+i*dx, 0.0, min.z+(j+1)*dz);
+        var v00 = positionAttrib.array[idx*3+1];
+        var v01 = positionAttrib.array[(idx+1)*3+1];
+        var v10 = positionAttrib.array[(idx+iRes)*3+1];
+        var v11 = positionAttrib.array[(idx+iRes+1)*3+1];
 
-        var len0 = p.distanceTo(q0);
-        var len1 = p.distanceTo(q1);
+        var vv0 = v00*(1.0-(x-p.x)/dx) + v01*((x-p.x)/dx);
+        var vv1 = v10*(1.0-(x-p.x)/dx) + v11*((x-p.x)/dx);
 
-        if(len0 <= len1) {
+        var val = vv0*(1.0-(z-p.y)/dz) + vv1*((z-p.y)/dz);
 
-            var v0 = new THREE.Vector3(positions[idx*3+0], positions[idx*3+1], positions[idx*3+2]);
-            var v1 = new THREE.Vector3(positions[(idx+1)*3+0], positions[(idx+1)*3+1], positions[(idx+1)*3+2]);
-            var v2 = new THREE.Vector3(positions[(idx+1+iRes)*3+0], positions[(idx+1+iRes)*3+1], positions[(idx+1+iRes)*3+2]);
-
-            var nVector = new THREE.Vector3();
-            nVector.crossVectors(v1.sub(v0), v2.sub(v0));
-            nVector.normalize();
-
-            return nVector;
-        }
-        else {
-
-            var v0 = new THREE.Vector3(positions[idx*3+0], positions[idx*3+1], positions[idx*3+2]);
-            var v1 = new THREE.Vector3(positions[(idx+1+iRes)*3+0], positions[(idx+1+iRes)*3+1], positions[(idx+1+iRes)*3+2]);
-            var v2 = new THREE.Vector3(positions[(idx+iRes)*3+0], positions[(idx+iRes)*3+1], positions[(idx+iRes)*3+2]);
-
-            var nVector = THREE.Vector3();
-            nVector.crossVectors(v1-v0, v2-v0);
-            nVector.normalize();
-
-            return nVector;
-        }
+        return val;
     }
 
-    this.getHeight = function(posX, posZ) {
+    this.setHeight = function(ci, cj, h) {
 
-        var i = parseInt((posX-min.x)/dx);
-        var j = parseInt((posZ-min.z)/dz);
+        var d = 10.0;
 
-        var idx = parseInt(j*iRes+i);
+        var start_i = Math.max(ci-d-10, 0);
+        var end_i   = Math.min(ci+d+10, iRes-1);
 
-        var p = new THREE.Vector3(posX, 0.0, posZ);
+        var start_j = Math.max(cj-d-10, 0);
+        var end_j   = Math.min(cj+d+10, jRes-1);
 
-        var q0 = new THREE.Vector3(min.x+(i+1)*dx, 0.0, min.z+j*dz);
-        var q1 = new THREE.Vector3(min.x+i*dx, 0.0, min.z+(j+1)*dz);
+        var center = new THREE.Vector2(ci,cj);
 
-        var len0 = p.distanceTo(q0);
-        var len1 = p.distanceTo(q1);
+        for(var j=start_j; j<=end_j; j++) {
+            for(var i=start_i; i<=end_i; i++) {
 
-        if(len0 <= len1) {
+                var p = new THREE.Vector2(i,j);
+                var dist = p.distanceTo(center);
 
-            var h0 = positions[idx*3+1];
-            var h1 = positions[(idx+1)*3+1];
-            var h2 = positions[(idx+1+iRes)*3+1];
+                if(dist <= d) {
 
-            var v0 = new THREE.Vector3(positions[idx*3+0], 0.0, positions[idx*3+2]);
-            var v1 = new THREE.Vector3(positions[(idx+1)*3+0], 0.0, positions[(idx+1)*3+2]);
-            var v2 = new THREE.Vector3(positions[(idx+1+iRes)*3+0], 0.0, positions[(idx+1+iRes)*3+2]);
+                    var u = dist/d;
+                    var w = 70.0/80.0*Math.pow(1-u*u*u, 3);
 
-            var triangle = new THREE.Triangle(v0, v1, v2);
-            var b = triangle.barycoordFromPoint(p);
-
-            return b.x * h0 + b.y * h1 + h2 * b.z;
+                    var idx = parseInt(j*iRes+i);
+                    positionAttrib.array[idx*3+1] += h*w;
+                }
+            }
         }
-        else {
 
-            var h0 = positions[idx*3+1];
-            var h1 = positions[(idx+1+iRes)*3+1];
-            var h2 = positions[(idx+iRes)*3+1];
+        for(var j=start_j; j<=end_j; j++) {
+            for(var i=start_i; i<=end_i; i++) {
 
-            var v0 = new THREE.Vector3(positions[idx*3+0], 0.0, positions[idx*3+2]);
-            var v1 = new THREE.Vector3(positions[(idx+1+iRes)*3+0], 0.0, positions[(idx+1+iRes)*3+2]);
-            var v2 = new THREE.Vector3(positions[(idx+iRes)*3+0], 0.0, positions[(idx+iRes)*3+2]);
+                var idx = parseInt(j*iRes+i);
 
-            var triangle = new THREE.Triangle(v0, v1, v2);
-            var b = triangle.barycoordFromPoint(p);
+                var v0 = new THREE.Vector3(
+                    positionAttrib.array[(idx+1)*3+0]-positionAttrib.array[(idx-1)*3+0],
+                    positionAttrib.array[(idx+1)*3+1]-positionAttrib.array[(idx-1)*3+1],
+                    positionAttrib.array[(idx+1)*3+2]-positionAttrib.array[(idx-1)*3+2]
+                );
 
-            return b.x * h0 + b.y * h1 + h2 * b.z;
+                var v1 = new THREE.Vector3(
+                    positionAttrib.array[(idx+iRes)*3+0]-positionAttrib.array[(idx-iRes)*3+0],
+                    positionAttrib.array[(idx+iRes)*3+1]-positionAttrib.array[(idx-iRes)*3+1],
+                    positionAttrib.array[(idx+iRes)*3+2]-positionAttrib.array[(idx-iRes)*3+2]
+                );
+
+                var nor = new THREE.Vector3();
+                nor = nor.crossVectors(v0, v1);
+                nor = nor.normalize(nor);
+
+                normalAttrib.array[idx*3+0] = nor.x;
+                normalAttrib.array[idx*3+1] = nor.y;
+                normalAttrib.array[idx*3+2] = nor.z;
+            }
         }
+
+        positionAttrib.needsUpdate = true;
+        normalAttrib.needsUpdate = true;
+    }
+
+    this.getIndex = function(pos) {
+        return new THREE.Vector2((pos.x-min.x)/dx, (pos.z-min.z)/dz);
     }
 
     this.addDecal = function(pos) {
@@ -286,46 +335,50 @@ function AdditiveTerrain() {
             return;
         }
 
-        var dd = (ptSize*Math.random()*0.5) + ptSize*0.5;
-        var padx = dx*1.1;
-        var padz = dz*1.1;
-
-        if(pos.x >= max.x-padx || pos.x <= min.x+padx || pos.z >= max.z-padz || pos.z <= min.z+padz) {
+        if(pos.x >= max.x || pos.x <= min.x || pos.z >= max.z || pos.z <= min.z) {
             return;
         }
 
-        var i = parseInt((pos.x-dd-min.x)/dx);
-        var j = parseInt((pos.z+dd-min.z)/dz);
+        var dd = (ptSize*Math.random()*0.5) + ptSize*0.5;
 
         var theta = Math.PI*0.5*(0.5-Math.random());
+        if(Math.random() > 0.5) {
+            theta *= -1.0;
+        }
 
         var c = Math.cos(theta);
         var s = Math.sin(theta);
 
-        var x0 = +dd, z0 = +dd;
-        var x1 = -dd, z1 = -dd;
+        var x0 = -dd, z0 = -dd;
+        var x1 = +dd, z1 = +dd;
 
-        if(Math.random() > 0.5) {
-            x0 = -dd; z0 = -dd;
-            x1 = +dd; z1 = +dd;
-        }
+        //var v0 = new THREE.Vector3(x0, _this.getHeight(x0,z0)+5.0, z0);
+        //var v1 = new THREE.Vector3(x1, _this.getHeight(x1,z0)+5.0, z0);
+        //var v2 = new THREE.Vector3(x1, _this.getHeight(x1,z1)+5.0, z1);
+        //var v3 = new THREE.Vector3(x0, _this.getHeight(x0,z1)+5.0, z1);
 
-        var v0 = new THREE.Vector3(x0, _this.getHeight(x0,z0)+5.0, z0);
-        var v1 = new THREE.Vector3(x1, _this.getHeight(x1,z0)+5.0, z0);
-        var v2 = new THREE.Vector3(x1, _this.getHeight(x1,z1)+5.0, z1);
-        var v3 = new THREE.Vector3(x0, _this.getHeight(x0,z1)+5.0, z1);
+        var v0 = new THREE.Vector3(x0, 0.0, z0);
+        var v1 = new THREE.Vector3(x1, 0.0, z0);
+        var v2 = new THREE.Vector3(x1, 0.0, z1);
+        var v3 = new THREE.Vector3(x0, 0.0, z1);
+
+        var offset = dx*0.2;
 
         v0.setX((v0.x)*c - (v0.z)*s + pos.x);
         v0.setZ((v0.x)*s + (v0.z)*c + pos.z);
+        v0.setY(_this.getHeight(v0.x, v0.z)+offset);
 
         v1.setX((v1.x)*c - (v1.z)*s + pos.x);
         v1.setZ((v1.x)*s + (v1.z)*c + pos.z);
+        v1.setY(_this.getHeight(v1.x, v1.z)+offset);
 
         v2.setX((v2.x)*c - (v2.z)*s + pos.x);
         v2.setZ((v2.x)*s + (v2.z)*c + pos.z);
+        v2.setY(_this.getHeight(v2.x, v2.z)+offset);
 
         v3.setX((v3.x)*c - (v3.z)*s + pos.x);
         v3.setZ((v3.x)*s + (v3.z)*c + pos.z);
+        v3.setY(_this.getHeight(v3.x, v3.z)+offset);
 
 
         var ix = countNum*3;
@@ -358,10 +411,12 @@ function AdditiveTerrain() {
     }
 
     this.getMesh = function() {
+        mesh.renderOrder = 1000;
         return mesh;
     }
 
     this.getDecalMesh = function() {
+        mesh.renderOrder = 1001;
         return decalMesh;
     }
 
