@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -41,24 +40,54 @@
     var controls;
 
 
-    var min = new THREE.Vector3(-300.0, 0.0, -300.0);
-    var max = new THREE.Vector3( 300.0, 0.0,  300.0);
+    var mouse = new THREE.Vector2();
+    var index = new THREE.Vector2();
+    var mouseVel = 0.0;
+
+    var offset = new THREE.Vector3();
+
+    var raycaster = new THREE.Raycaster();
+
+    var objects = [];
+    var plane = new THREE.Mesh(
+            new THREE.PlaneBufferGeometry( 10000, 10000, 8, 8 ),
+            new THREE.MeshBasicMaterial( { visible: false } )
+    );
+
+    var selected = false;
 
 
     particleSystem = new ParticleSystem();
-    particleSystem.initialize(1000);
 
-    particleSystem.setParameters(Examples.snowStorm);
-    particleSystem.setParameters({seedSize : 3.1});
-    particleSystem.setParameters({seedVelMag : 100.3});
-    particleSystem.setParameters({windStrength: 0.5});
-    particleSystem.setParameters({seedLife : 10});
+
+    var psParams = {blendingType : THREE.NormalBlending};
+
+    particleSystem.initialize(1000, psParams);
+
+    particleSystem.setParameters({
+        seedVelDir: new THREE.Vector3(0.0,-1,0),
+        seedVelMag: 120.0,
+        globalForce: new THREE.Vector3(0, -0.1, 0),
+        windStrength: 10,
+        seedSize: 60,
+        seedLife: 5.0,
+        texFile: "./textures/leaf.png",
+        particleColor: new THREE.Color(0Xaaaa00),
+        angularVel : 0.005,
+        alpha: 1.0,
+    });
 
 
     var terrain = new AdditiveTerrain();
 
-    var terrainParams = {terrainImage:"./textures/grass.jpg", decalImage:"./textures/snowflake.png", decalColor:0xffffff};
-    terrain.initialize(min, max, 1000, 1000, 100000, 0.5, terrainParams);
+    var min = new THREE.Vector3(-2000.0, 0.0, -2000.0);
+    var max = new THREE.Vector3( 2000.0, 0.0,  2000.0);
+
+    var terrainParams = {terrainImage:"./textures/grass.jpg",
+                         terrainImage1:"./textures/desert5.jpg",
+                         decalImage:"./textures/leaf.png", decalColor:0xffaa00};
+
+    terrain.initialize(min, max, 200, 200, 10000, 20, terrainParams);
 
 
     init();
@@ -80,28 +109,34 @@
 
         //
 
-        camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.01, 10000 );
+        camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 10000 );
         camera.setLens(18);
 
-        camera.position.y = 10;
-        //camera.position.x = -2;
-        camera.position.z = 50;
+        camera.position.y = 200;
+        camera.position.x = 200;
+        camera.position.z = 500;
 
         scene = new THREE.Scene();
+        scene.fog = new THREE.Fog( 0x59472b, 1, 10000 );
 
         //
 
         var light = new THREE.DirectionalLight( 0xefefff, 2 );
         light.position.set( 1, 1, 1 ).normalize();
+        light.castShadow = true;
         scene.add( light );
+
 
         var light = new THREE.DirectionalLight( 0xffefef, 2 );
         light.position.set( -1, -1, -1 ).normalize();
+        light.castShadow = true;
         scene.add( light );
-
 
         //terrain.addDecal(new THREE.Vector3(0.0, 0.0, 0.0));
 
+        objects.push(terrain.getMesh());
+
+        scene.add(plane);
         scene.add(terrain.getMesh());
         scene.add(terrain.getDecalMesh());
         scene.add(particleSystem.getMesh());
@@ -109,7 +144,7 @@
         //
 
         renderer = new THREE.WebGLRenderer( { antialias: true } );
-        renderer.setClearColor( 0xaaaaaa );
+        renderer.setClearColor( scene.fog.color );
         //renderer.setPixelRatio( window.devicePixelRatio );
         renderer.setSize( window.innerWidth, window.innerHeight );
         container.appendChild(renderer.domElement);
@@ -138,6 +173,66 @@
 
         window.addEventListener( 'resize', onWindowResize, false );
 
+        renderer.domElement.addEventListener('mousemove', onDocumentMouseMove, false);
+        renderer.domElement.addEventListener('mousedown', onDocumentMouseDown, false);
+        renderer.domElement.addEventListener('mouseup'  , onDocumentMouseUp  , false);
+
+    }
+
+    function onDocumentMouseMove(event) {
+
+        event.preventDefault();
+
+        var tempY = mouse.y;
+
+        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+        mouseVel = mouse.y - tempY;
+
+
+        raycaster.setFromCamera( mouse, camera );
+
+        if(selected == true) {
+
+            var intersects = raycaster.intersectObject( plane );
+
+            if(intersects.length > 0) {
+
+                terrain.setHeight(parseInt(index.x), parseInt(index.y), mouseVel*500.0);
+
+            }
+        }
+    }
+
+    function onDocumentMouseDown(event) {
+
+        event.preventDefault();
+
+        raycaster.setFromCamera( mouse, camera );
+
+        var intersects = raycaster.intersectObjects(objects);
+
+        if(intersects.length > 0) {
+
+            controls.enabled = false;
+            selected = true;
+
+            plane.position.copy(intersects[0].point);
+            plane.lookAt(camera.position);
+
+            index = terrain.getIndex(intersects[0].point);
+        }
+    }
+
+    function onDocumentMouseUp(event) {
+
+        event.preventDefault();
+
+        controls.enabled = true;
+
+        selected = false;
+
     }
 
     function onWindowResize() {
@@ -146,7 +241,6 @@
         camera.updateProjectionMatrix();
 
         renderer.setSize( window.innerWidth, window.innerHeight );
-
     }
 
     //
@@ -167,12 +261,12 @@
         stats.begin();
 
 
-        var cen = new THREE.Vector3(0,200,0);
+        var cen = new THREE.Vector3(0,500,0);
         var nor = new THREE.Vector3(0,-1,0);
-        var rad = 200;
+        var rad = 500;
 
 
-        particleSystem.addParticlesFromDisk(10, cen, nor, rad);
+        particleSystem.addParticlesFromDisk(2, cen, nor, rad);
         particleSystem.updateParticles(dt, terrain);
 
 
