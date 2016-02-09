@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>sample</title>
+    <script src="./lib/three/build/three.js"></script>
+    <script src="./lib/three/examples/js/libs/stats.min.js"></script>
+    <script type="text/javascript" src="./dat.gui.min.js"></script>
+    <script src="./lib/three/examples/js/controls/OrbitControls.js"></script>
+
+    <style>
+        body {
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="Stats-output">
+</div>
+<!-- Div which will hold the Output -->
+<div id="WebGL-output">
+</div>
+<script id="fragment_shh" type="x-shader/x-fragment">
+			#ifdef GL_ES
+			precision highp float;
+			#endif
+
+			uniform sampler2D tOne;
+			uniform sampler2D tSec;
+            uniform float alpha;
+			varying vec2 vUv;
+
+			void main(void)
+			{
+				vec3 c;
+				vec4 Ca = texture2D(tOne, vUv);
+				vec4 Cb = texture2D(tSec, vUv);
+				Ca.a=1.0;
+				Cb.a=alpha;
+				c = Ca.rgb * Ca.a + Cb.rgb * Cb.a;
+			    gl_FragColor= vec4(c, 1.0);
+			}
+</script>
+
+<script id="vertex_shh" type="x-shader/x-vertex">
+    varying vec2 vUv;
+	#ifdef USE_SKINNING
+	 	varying vec3 vViewPosition;
+		varying vec3 vNormal;
+		uniform mat4 bindMatrix;
+		uniform mat4 bindMatrixInverse;
+		uniform mat4 boneGlobalMatrices[ MAX_BONES ];
+		mat4 getBoneMatrix( const in float i ) {
+			mat4 bone = boneGlobalMatrices[ int(i) ];
+			return bone;
+		}
+	#endif
+	void main() {
+		vUv = uv;
+		#ifdef USE_SKINNING
+			mat4 boneMatX = getBoneMatrix( skinIndex.x );
+			mat4 boneMatY = getBoneMatrix( skinIndex.y );
+			mat4 boneMatZ = getBoneMatrix( skinIndex.z );
+			mat4 boneMatW = getBoneMatrix( skinIndex.w );
+			mat4 skinMatrix = mat4( 0.0 );
+			skinMatrix += skinWeight.x * boneMatX;
+			skinMatrix += skinWeight.y * boneMatY;
+			skinMatrix += skinWeight.z * boneMatZ;
+			skinMatrix += skinWeight.w * boneMatW;
+			skinMatrix  = bindMatrixInverse * skinMatrix * bindMatrix;
+			vec4 skinnedNormal = skinMatrix * vec4( normal, 0.0 );
+			vec3 objectNormal = skinnedNormal.xyz;
+			vec3 transformedNormal = normalMatrix * objectNormal;
+			vNormal = normalize( transformedNormal );
+			vec4 skinVertex = bindMatrix * vec4( position, 1.0 );
+			vec4 skinned = vec4( 0.0 );
+			skinned += boneMatX * skinVertex * skinWeight.x;
+			skinned += boneMatY * skinVertex * skinWeight.y;
+			skinned += boneMatZ * skinVertex * skinWeight.z;
+			skinned += boneMatW * skinVertex * skinWeight.w;
+			skinned  = bindMatrixInverse * skinned;
+			vec4 mvPosition = modelViewMatrix * skinned;
+		#else
+			vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+		#endif
+		gl_Position = projectionMatrix * mvPosition;
+	}
+
+		</script>
+<!-- Javascript code that runs our Three.js examples -->
+<script type="text/javascript">
+
+    // once everything is loaded, we run our Three.js stuff.
+    function init() {
+
+        var stats = initStats();
+
+        // create a scene, that will hold all our elements such as objects, cameras and lights.
+        var scene = new THREE.Scene();
+
+        // create a camera, which defines where we're looking at.
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
+
+        // create a render and set the size
+        var webGLRenderer = new THREE.WebGLRenderer();
+        webGLRenderer.setClearColor(new THREE.Color(0xEEEEEE, 1.0));
+        webGLRenderer.setSize(window.innerWidth, window.innerHeight);
+        webGLRenderer.shadowMapEnabled = true;
+
+        // position and point the camera to the center of the scene
+        camera.position.x = 100;
+        camera.position.y = 100;
+        camera.position.z = 50;
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+        var textureGrass = THREE.ImageUtils.loadTexture("./textures/grass.jpg");
+        textureGrass.wrapS = THREE.RepeatWrapping;
+        textureGrass.wrapT = THREE.RepeatWrapping;
+        textureGrass.repeat.set(4, 4);
+
+        var texture = THREE.ImageUtils.loadTexture("./textures/character.png");
+
+        var texture2= THREE.ImageUtils.loadTexture("./textures/snowflake.png");
+
+
+        var planeGeometry = new THREE.PlaneBufferGeometry(500, 500, 20, 20);
+        var planeMaterial = new THREE.MeshLambertMaterial({map: textureGrass});
+        var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.receiveShadow = true;
+
+        // rotate and position the plane
+        plane.rotation.x = -0.5 * Math.PI;
+        plane.position.x = 15;
+        plane.position.y = 0;
+        plane.position.z = 0;
+
+        // add the plane to the scene
+        scene.add(plane);
+
+
+        var orbitControls = new THREE.OrbitControls(camera);
+
+        var spotLight0 = new THREE.DirectionalLight(0xefefff,2);
+        spotLight0.position.set(1,1,1).normalize();
+        scene.add(spotLight0);
+
+        var spotLight1 = new THREE.DirectionalLight(0xefefff,2);
+        spotLight1.position.set(-1,-1,-1).normalize();
+        scene.add(spotLight1);
+
+        // add the output of the renderer to the html element
+        document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
+
+
+        var vertShader = document.getElementById('vertex_shh').textContent;
+        var fragShader = document.getElementById('fragment_shh').textContent;
+
+        var mesh;
+        var alpha=0.7;
+        var clock = new THREE.Clock();
+
+        var loader = new THREE.JSONLoader();
+
+        loader.load('./models/character.json', function (model) {
+
+
+            var uniforms = {    // custom uniforms (your textures)
+                tOne: { type: "t", value: texture },
+                tSec: { type: "t", value: texture2 },
+                alpha:{type:"f",value:alpha}
+            };
+
+            var material_shh = new THREE.ShaderMaterial({
+                uniforms: uniforms,
+                vertexShader: vertShader,
+                fragmentShader: fragShader,
+                transparent: true,
+                skinning : true
+            });
+
+            mesh = new THREE.SkinnedMesh(model,material_shh,false);
+            mesh.scale.set(20,20,20);
+            mesh.rotation.y = 90*Math.PI/180;
+
+            var animation = new THREE.Animation(mesh, mesh.geometry.animations[0]);
+
+            scene.add(mesh);
+
+            // start the animation
+            animation.play();
+
+        }, './models/');
+
+        var cloud;
+
+        var controls = new function () {
+            this.size = 1.5;
+            this.transparent = true;
+            this.opacity = 0.6;
+            this.color = 0xffffff;
+
+            this.sizeAttenuation = true;
+
+            this.redraw = function () {
+                scene.remove(scene.getObjectByName("particles1"));
+                scene.remove(scene.getObjectByName("particles2"));
+
+                createPointCloud(controls.size, controls.transparent, controls.opacity, controls.sizeAttenuation, controls.color);
+            };
+        };
+
+        controls.redraw();
+
+        render();
+
+
+        function createPointCloud(size, transparent, opacity, sizeAttenuation, color) {
+
+            var texture = THREE.ImageUtils.loadTexture("./textures/raindrop-1.png");
+            var geom = new THREE.Geometry();
+
+            var material = new THREE.PointCloudMaterial({
+                size: size,
+                transparent: transparent,
+                opacity: opacity,
+                map: texture,
+                blending: THREE.AdditiveBlending,
+                sizeAttenuation: sizeAttenuation,
+                color: color
+            });
+
+
+            var range = 150;
+            for (var i = 0; i < 1000; i++) {
+                var particle = new THREE.Vector3(
+                        Math.random() * range - range / 2,
+                        Math.random() * range * 1.5,
+                        Math.random() * range - range / 2);
+                particle.velocityY = 1 + Math.random() / 5;
+                particle.velocityX = (Math.random() - 0.5) / 3;
+                geom.vertices.push(particle);
+            }
+
+            cloud = new THREE.PointCloud(geom, material);
+            cloud.sortParticles = true;
+
+            scene.add(cloud);
+        }
+
+        render();
+
+        function render() {
+            stats.update();
+            var vertices = cloud.geometry.vertices;
+            vertices.forEach(function (v) {
+                v.y = v.y - (v.velocityY);
+                v.x = v.x - (v.velocityX);
+
+
+                if (v.y <= 0) v.y = 60;
+                if (v.x <= -20 || v.x >= 20) v.velocityX = v.velocityX * -1;
+            });
+            var delta = clock.getDelta();
+            orbitControls.update(delta);
+
+            THREE.AnimationHandler.update(delta);
+
+            // render using requestAnimationFrame
+            requestAnimationFrame(render);
+            webGLRenderer.render(scene, camera);
+        }
+
+
+        function initStats() {
+
+            var stats = new Stats();
+            stats.setMode(0); // 0: fps, 1: ms
+
+            // Align top-left
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.top = '0px';
+
+            document.getElementById("Stats-output").appendChild(stats.domElement);
+
+            return stats;
+        }
+    }
+    window.onload = init;
+</script>
+</body>
+</html>
