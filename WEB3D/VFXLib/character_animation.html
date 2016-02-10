@@ -8,6 +8,8 @@
     <script src="./lib/three/examples/js/libs/stats.min.js"></script>
     <script type="text/javascript" src="./dat.gui.min.js"></script>
     <script src="./lib/three/examples/js/controls/OrbitControls.js"></script>
+    <script src="./ParticleSystem.js"></script>
+    <script src="./paticleParameter.js"></script>
 
     <style>
         body {
@@ -95,19 +97,33 @@
 <!-- Javascript code that runs our Three.js examples -->
 <script type="text/javascript">
 
+    var particleSystem = new ParticleSystem();
+    particleSystem.initialize(1000);
+
+    particleSystem.setParameters(Examples.snowStorm);
+    particleSystem.setParameters({seedSize : 4.1});
+    particleSystem.setParameters({seedVelMag : 100});
+    particleSystem.setParameters({windStrength: 0.0});
+    particleSystem.setParameters({seedLife : 1});
+
+
+    var mesh;
+    var material_shh;
+    var scene,camera,webGLRenderer,textureGrass,texture,texture2,planeGeometry;
+
     // once everything is loaded, we run our Three.js stuff.
     function init() {
 
         var stats = initStats();
 
         // create a scene, that will hold all our elements such as objects, cameras and lights.
-        var scene = new THREE.Scene();
+        scene = new THREE.Scene();
 
         // create a camera, which defines where we're looking at.
-        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
 
         // create a render and set the size
-        var webGLRenderer = new THREE.WebGLRenderer();
+        webGLRenderer = new THREE.WebGLRenderer();
         webGLRenderer.setClearColor(new THREE.Color(0xEEEEEE, 1.0));
         webGLRenderer.setSize(window.innerWidth, window.innerHeight);
         webGLRenderer.shadowMapEnabled = true;
@@ -118,17 +134,17 @@
         camera.position.z = 50;
         camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-        var textureGrass = THREE.ImageUtils.loadTexture("./textures/grass.jpg");
+        textureGrass = THREE.ImageUtils.loadTexture("./textures/grass.jpg");
         textureGrass.wrapS = THREE.RepeatWrapping;
         textureGrass.wrapT = THREE.RepeatWrapping;
         textureGrass.repeat.set(4, 4);
 
-        var texture = THREE.ImageUtils.loadTexture("./textures/character.png");
+        texture = THREE.ImageUtils.loadTexture("./textures/character.png");
 
-        var texture2= THREE.ImageUtils.loadTexture("./textures/snowflake.png");
+        texture2= THREE.ImageUtils.loadTexture("./textures/snowflake.png");
 
 
-        var planeGeometry = new THREE.PlaneBufferGeometry(500, 500, 20, 20);
+        planeGeometry = new THREE.PlaneBufferGeometry(500, 500, 20, 20);
         var planeMaterial = new THREE.MeshLambertMaterial({map: textureGrass});
         var plane = new THREE.Mesh(planeGeometry, planeMaterial);
         plane.receiveShadow = true;
@@ -141,7 +157,7 @@
 
         // add the plane to the scene
         scene.add(plane);
-
+        scene.add(particleSystem.getMesh());
 
         var orbitControls = new THREE.OrbitControls(camera);
 
@@ -160,32 +176,38 @@
         var vertShader = document.getElementById('vertex_shh').textContent;
         var fragShader = document.getElementById('fragment_shh').textContent;
 
-        var mesh;
-        var alpha=0.7;
+
+        var times=20;
+        var max;
+        var min;
+        var alpha=0.0;
         var clock = new THREE.Clock();
 
         var loader = new THREE.JSONLoader();
 
         loader.load('./models/character.json', function (model) {
 
-
-            var uniforms = {    // custom uniforms (your textures)
-                tOne: { type: "t", value: texture },
-                tSec: { type: "t", value: texture2 },
-                alpha:{type:"f",value:alpha}
-            };
-
-            var material_shh = new THREE.ShaderMaterial({
-                uniforms: uniforms,
+            material_shh = new THREE.ShaderMaterial({
+                uniforms: {
+                    tOne: { type: "t", value: texture },
+                    tSec: { type: "t", value: texture2 },
+                    alpha:{type:"f",value:alpha}
+                },
                 vertexShader: vertShader,
                 fragmentShader: fragShader,
                 transparent: true,
                 skinning : true
             });
 
+
             mesh = new THREE.SkinnedMesh(model,material_shh,false);
-            mesh.scale.set(20,20,20);
+            mesh.scale.set(times,times,times);
             mesh.rotation.y = 90*Math.PI/180;
+
+           // mesh.geometry.computeBoundingBox();
+
+            var bbox = new THREE.BoundingBoxHelper( mesh, 0x00ff00 );
+            bbox.update();
 
             var animation = new THREE.Animation(mesh, mesh.geometry.animations[0]);
 
@@ -194,86 +216,59 @@
             // start the animation
             animation.play();
 
+            max=bbox.box.max;
+            min=bbox.box.min;
+
         }, './models/');
 
-        var cloud;
-
-        var controls = new function () {
-            this.size = 1.5;
-            this.transparent = true;
-            this.opacity = 0.6;
-            this.color = 0xffffff;
-
-            this.sizeAttenuation = true;
-
-            this.redraw = function () {
-                scene.remove(scene.getObjectByName("particles1"));
-                scene.remove(scene.getObjectByName("particles2"));
-
-                createPointCloud(controls.size, controls.transparent, controls.opacity, controls.sizeAttenuation, controls.color);
-            };
-        };
-
-        controls.redraw();
-
         render();
-
-
-        function createPointCloud(size, transparent, opacity, sizeAttenuation, color) {
-
-            var texture = THREE.ImageUtils.loadTexture("./textures/raindrop-1.png");
-            var geom = new THREE.Geometry();
-
-            var material = new THREE.PointCloudMaterial({
-                size: size,
-                transparent: transparent,
-                opacity: opacity,
-                map: texture,
-                blending: THREE.AdditiveBlending,
-                sizeAttenuation: sizeAttenuation,
-                color: color
-            });
-
-
-            var range = 150;
-            for (var i = 0; i < 1000; i++) {
-                var particle = new THREE.Vector3(
-                        Math.random() * range - range / 2,
-                        Math.random() * range * 1.5,
-                        Math.random() * range - range / 2);
-                particle.velocityY = 1 + Math.random() / 5;
-                particle.velocityX = (Math.random() - 0.5) / 3;
-                geom.vertices.push(particle);
-            }
-
-            cloud = new THREE.PointCloud(geom, material);
-            cloud.sortParticles = true;
-
-            scene.add(cloud);
-        }
-
-        render();
+        var time;
 
         function render() {
             stats.update();
-            var vertices = cloud.geometry.vertices;
-            vertices.forEach(function (v) {
-                v.y = v.y - (v.velocityY);
-                v.x = v.x - (v.velocityX);
 
-
-                if (v.y <= 0) v.y = 60;
-                if (v.x <= -20 || v.x >= 20) v.velocityX = v.velocityX * -1;
-            });
             var delta = clock.getDelta();
             orbitControls.update(delta);
 
-            THREE.AnimationHandler.update(delta);
+            var now = new Date().getTime();
+            var dt = (now - (time||now))/1000;
+            time = now;
 
-            // render using requestAnimationFrame
+            var cen = new THREE.Vector3(0,100,0);
+            var nor = new THREE.Vector3(0,-1,0);
+            var rad = 1000;
+
+            particleSystem.addParticlesFromDisk(10, cen, nor, rad);
+            particleSystem.updateParticles(dt);
+
+
+            var count = particleSystem.getCount();
+
+            for(var i=0; i<count; i++) {
+
+                var p = particleSystem.getParticle(i).position;
+
+                if(min != undefined && max != undefined) {
+
+                    if(min.x <= p.x && min.y <= p.y && min.z <= p.z &&
+                        max.x >= p.x && max.y >= p.y && max.z >= p.z ) {
+                        if(alpha<1.0){
+                            alpha+=0.0005;
+
+                            material_shh.uniforms.alpha = {type:"f",value:alpha};
+                            material_shh.needsUpdate = true;
+                        }
+                    }
+                }
+            }
+
+            THREE.AnimationHandler.update(dt);
+
             requestAnimationFrame(render);
+            // render using requestAnimationFrame
             webGLRenderer.render(scene, camera);
         }
+
 
 
         function initStats() {
