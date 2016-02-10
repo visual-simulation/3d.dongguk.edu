@@ -253,7 +253,7 @@
                     if(min.x <= p.x && min.y <= p.y && min.z <= p.z &&
                         max.x >= p.x && max.y >= p.y && max.z >= p.z ) {
                         if(alpha<1.0){
-                            alpha+=0.0005;
+                            alpha+=0.001;
 
                             material_shh.uniforms.alpha = {type:"f",value:alpha};
                             material_shh.needsUpdate = true;
