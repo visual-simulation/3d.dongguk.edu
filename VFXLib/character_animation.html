@@ -107,8 +107,8 @@
     particleSystem.setParameters({seedLife : 1});
 
 
-    var mesh;
-    var material_shh;
+    var mesh,mesh1,mesh2;
+    var material_shh,material_shh1,material_shh2,material_shh3;
     var scene,camera,webGLRenderer,textureGrass,texture,texture2,planeGeometry;
 
     // once everything is loaded, we run our Three.js stuff.
@@ -178,9 +178,11 @@
 
 
         var times=20;
-        var max;
-        var min;
+        var max,max1,max2,nax3;
+        var min,min1,min2,min3;
         var alpha=0.0;
+        var alpha1=0.0;
+        var alpha2=0.0;
         var clock = new THREE.Clock();
 
         var loader = new THREE.JSONLoader();
@@ -202,8 +204,8 @@
 
             mesh = new THREE.SkinnedMesh(model,material_shh,false);
             mesh.scale.set(times,times,times);
-            mesh.rotation.y = 90*Math.PI/180;
-
+            //mesh.rotation.y = 90*Math.PI/180;
+            mesh.position.z=20;
            // mesh.geometry.computeBoundingBox();
 
             var bbox = new THREE.BoundingBoxHelper( mesh, 0x00ff00 );
@@ -214,10 +216,87 @@
             scene.add(mesh);
 
             // start the animation
-            animation.play();
+
+            animation.play(40);
 
             max=bbox.box.max;
             min=bbox.box.min;
+
+        }, './models/');
+
+
+        loader.load('./models/character.json', function (model) {
+
+            material_shh1 = new THREE.ShaderMaterial({
+                uniforms: {
+                    tOne: { type: "t", value: texture },
+                    tSec: { type: "t", value: texture2 },
+                    alpha:{type:"f",value:alpha1}
+                },
+                vertexShader: vertShader,
+                fragmentShader: fragShader,
+                transparent: true,
+                skinning : true
+            });
+
+
+            mesh1 = new THREE.SkinnedMesh(model,material_shh1,false);
+            mesh1.scale.set(times,times,times);
+            mesh1.rotation.y = 90*Math.PI/180;
+            mesh1.position.x=20;
+
+            // mesh.geometry.computeBoundingBox();
+
+            var bbox = new THREE.BoundingBoxHelper( mesh1, 0x00ff00 );
+            bbox.update();
+
+            var animation = new THREE.Animation(mesh1, mesh1.geometry.animations[0]);
+
+            scene.add(mesh1);
+
+            // start the animation
+            animation.play(0);
+
+            max1=bbox.box.max;
+            min1=bbox.box.min;
+
+        }, './models/');
+
+        loader.load('./models/character.json', function (model) {
+
+            material_shh2 = new THREE.ShaderMaterial({
+                uniforms: {
+                    tOne: { type: "t", value: texture },
+                    tSec: { type: "t", value: texture2 },
+                    alpha:{type:"f",value:alpha2}
+                },
+                vertexShader: vertShader,
+                fragmentShader: fragShader,
+                transparent: true,
+                skinning : true
+            });
+
+
+            mesh2 = new THREE.SkinnedMesh(model,material_shh2,false);
+            mesh2.scale.set(times,times,times);
+            mesh2.rotation.y = 180*Math.PI/180;
+            //mesh.position.x=-20;
+            mesh2.position.z=-20;
+
+            // mesh.geometry.computeBoundingBox();
+
+            var bbox = new THREE.BoundingBoxHelper( mesh2, 0x00ff00 );
+            bbox.update();
+
+            var animation = new THREE.Animation(mesh2, mesh2.geometry.animations[0]);
+
+            scene.add(mesh2);
+
+            // start the animation
+            animation.play(20);
+
+            max2=bbox.box.max;
+            min2=bbox.box.min;
 
         }, './models/');
 
@@ -251,12 +330,39 @@
                 if(min != undefined && max != undefined) {
 
                     if(min.x <= p.x && min.y <= p.y && min.z <= p.z &&
-                        max.x >= p.x && max.y >= p.y && max.z >= p.z ) {
+                            max.x >= p.x && max.y >= p.y && max.z >= p.z ) {
                         if(alpha<1.0){
                             alpha+=0.001;
 
                             material_shh.uniforms.alpha = {type:"f",value:alpha};
                             material_shh.needsUpdate = true;
+                            //THREE.AnimationHandler.update(dt);
+                        }
+                    }
+                }
+                if(min1 != undefined && max1 != undefined) {
+
+                    if(min1.x <= p.x && min1.y <= p.y && min1.z <= p.z &&
+                            max1.x >= p.x && max1.y >= p.y && max1.z >= p.z ) {
+                        if(alpha1<1.0){
+                            alpha1+=0.001;
+
+                            material_shh1.uniforms.alpha = {type:"f",value:alpha1};
+                            material_shh1.needsUpdate = true;
+                            //THREE.AnimationHandler.update(dt);
+                        }
+                    }
+                }
+                if(min2 != undefined && max2 != undefined) {
+
+                    if(min2.x <= p.x && min2.y <= p.y && min2.z <= p.z &&
+                            max2.x >= p.x && max2.y >= p.y && max2.z >= p.z ) {
+                        if(alpha2<1.0){
+                            alpha2+=0.005;
+
+                            material_shh2.uniforms.alpha = {type:"f",value:alpha2};
+                            material_shh2.needsUpdate = true;
+                            //THREE.AnimationHandler.update(dt);
                         }
                     }
                 }
