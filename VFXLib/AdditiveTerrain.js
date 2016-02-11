@@ -4,6 +4,8 @@ function AdditiveTerrain() {
 
     var _this = this;
 
+    // terrain info
+
     var min;
     var max;
 
@@ -11,17 +13,12 @@ function AdditiveTerrain() {
     var dx, dz;
     var du, dv;
 
-    var ptSize = 0.0;
-
-    var positions;
-    var normals;
-    var indices;
-    var texCoords;
-
     var positionAttrib;
     var normalAttrib;
+    var uvAttrib;
+    var indexAttrib;
 
-    //
+    // Mesh info
 
     var geometry;
     var material;
@@ -34,6 +31,9 @@ function AdditiveTerrain() {
 
 
     // decals
+
+    var ptSize = 0.0;
+
     var totalNum;
     var countNum;
 
@@ -44,36 +44,87 @@ function AdditiveTerrain() {
     var decalMaterial;
     var decalMesh;
 
+    this.save = function(fileName) {
+
+        var data = {
+            min: min, max: max,
+            iRes: iRes, jRes: jRes,
+            dx: dx, dz: dz,
+            du: du, dv: dv,
+            position: positionAttrib.array
+        }
+
+        var json = JSON.stringify(data);
+        var blob = new Blob([json], {type: "application/json"});
+        var url  = URL.createObjectURL(blob);
+
+        var a = document.createElement('a');
+        a.download = fileName;
+        a.href = url;
+
+        a.click();
+    }
+
+    this.load = function(fileName) {
+
+    }
+
+    this.getDx = function() {
+        return dx;
+    }
+
+    this.getDz = function() {
+        return dz;
+    }
 
     this.initialize = function(vMin, vMax, iSize, jSize, _totalNum, _ptSize, params) {
 
-        min = vMin.clone();
-        max = vMax.clone();
+        var data = undefined;
+
+        if(params.load == undefined) {
+
+            min = vMin.clone();
+            max = vMax.clone();
+
+            iRes = iSize;
+            jRes = jSize;
+
+            dx = (max.x - min.x) / iRes;
+            dz = (max.z - min.z) / jRes;
+
+            du = 0.1;
+            dv = 0.1;
+
+            max = new THREE.Vector3(min.x+iRes*dx, max.y, min.z+jRes*dz);
+        }
+        else {
+
+            var json = loadFileToString(params.load);
+            data = JSON.parse(json);
+
+            min = data.min;
+            max = data.max;
+
+            iRes = data.iRes;
+            jRes = data.jRes;
+
+            dx = data.dx;
+            dz = data.dz;
+
+            du = data.du;
+            dv = data.dv;
+        }
 
         ptSize = _ptSize;
         totalNum = _totalNum;
 
-        iRes = iSize;
-        jRes = jSize;
-
-        dx = (max.x - min.x) / iRes;
-        dz = (max.z - min.z) / jRes;
-
-        du = 0.1;
-        dv = 0.1;
-
-        max = new THREE.Vector3(min.x+iRes*dx, max.y, min.z+jRes*dz);
-
         var numTri = (iRes-1)*(jRes-1)*2;
 
-        positions = new Float32Array(iRes*jRes*3);
-        normals   = new Float32Array(iRes*jRes*3);
-        texCoords = new Float32Array(iRes*jRes*2);
+        positionAttrib = new THREE.BufferAttribute(new Float32Array(iRes*jRes*3), 3);
+        normalAttrib   = new THREE.BufferAttribute(new Float32Array(iRes*jRes*3), 3);
+        uvAttrib       = new THREE.BufferAttribute(new Float32Array(iRes*jRes*2), 2);
+        indexAttrib    = new THREE.BufferAttribute(new Uint32Array(numTri*3)    , 3);
 
-        indices   = new Uint32Array(numTri*3);
-
-        positionAttrib = new THREE.BufferAttribute(positions, 3);
-        normalAttrib = new THREE.BufferAttribute(normals, 3);
 
         for(var j=0; j<jRes; j++) {
             for(var i=0; i<iRes; i++) {
@@ -89,12 +140,21 @@ function AdditiveTerrain() {
                 //var height = Math.random() * 0.5;
                 var height = 0.0;
 
-                positions[idx*3+0] = px;
-                positions[idx*3+1] = height+min.y;
-                positions[idx*3+2] = pz;
+                if(data == undefined) {
 
-                texCoords[idx*2+0] = pu;
-                texCoords[idx*2+1] = pv;
+                    positionAttrib.array[idx*3+0] = px;
+                    positionAttrib.array[idx*3+1] = height+min.y;
+                    positionAttrib.array[idx*3+2] = pz;
+                }
+                else {
+
+                    positionAttrib.array[idx*3+0] = data.position[idx*3+0];
+                    positionAttrib.array[idx*3+1] = data.position[idx*3+1];
+                    positionAttrib.array[idx*3+2] = data.position[idx*3+2];
+                }
+
+                uvAttrib.array[idx*2+0] = pu;
+                uvAttrib.array[idx*2+1] = pv;
             }
         }
 
@@ -131,22 +191,22 @@ function AdditiveTerrain() {
 
                 var idx = j*iRes + i;
 
-                indices[c++] = idx;
-                indices[c++] = idx+1;
-                indices[c++] = idx+1+iRes;
+                indexAttrib.array[c++] = idx;
+                indexAttrib.array[c++] = idx+1;
+                indexAttrib.array[c++] = idx+1+iRes;
 
-                indices[c++] = idx;
-                indices[c++] = idx+1+iRes;
-                indices[c++] = idx+iRes;
+                indexAttrib.array[c++] = idx;
+                indexAttrib.array[c++] = idx+1+iRes;
+                indexAttrib.array[c++] = idx+iRes;
             }
         }
 
         geometry = new THREE.BufferGeometry();
 
         geometry.addAttribute('position', positionAttrib);
-        geometry.addAttribute('normal'  , normalAttrib);
-        geometry.addAttribute('uv'      , new THREE.BufferAttribute(texCoords, 2));
-        geometry.addAttribute('index'   , new THREE.BufferAttribute(indices  , 3));
+        geometry.addAttribute('normal'  , normalAttrib  );
+        geometry.addAttribute('uv'      , uvAttrib      );
+        geometry.addAttribute('index'   , indexAttrib   );
 
         var tex;
         var tex2;
@@ -195,23 +255,13 @@ function AdditiveTerrain() {
             uniforms: {
                 texture  : {type: 't', value: tex},
                 texture2 : {type: 't', value: tex2},
-                color    : {type: 'c', value: new THREE.Color(terrainColor)},
-
-                topColor:    { type: "c", value: new THREE.Color( 0x0077ff ) },
-                bottomColor: { type: "c", value: new THREE.Color( 0xffffff ) },
-                offset:      { type: "f", value: 33 },
-                exponent:    { type: "f", value: 0.6 },
-                fogColor:    { type: "c", value: new THREE.Color( 0xff0000 ) },
-                fogNear:     { type: "f", value: 100 },
-                fogFar:      { type: "f", value: 1000 }
-
+                color    : {type: 'c', value: new THREE.Color(terrainColor)}
 
             },
             vertexShader  : loadFileToString("./shaders/additiveTerrainShader.vert"),
             fragmentShader: loadFileToString("./shaders/additiveTerrainShader.frag"),
             side: THREE.DoubleSide,
             wireframe: false,
-            fog: true
         });
 
         //
