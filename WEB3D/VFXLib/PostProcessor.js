@@ -71,7 +71,7 @@ function PostProcessor() {
 
         PRIVATE_GRAVITY_FORCE_FACTOR_X = ((Math.PI / 2) - rainOptions.gravityAngle) * (rainOptions.fps * 0.001) / 50;
 
-        rainSeedSize = 8;
+        rainSeedSize = 5;
         rainSeedLife = 3;
 
         rainTotal = _total;
@@ -109,9 +109,9 @@ function PostProcessor() {
         rainColors[i] = colors[Math.floor(Math.random()*3)];
         rainAlpha[i] = Math.random()*0.3;
         rainWidths[i] = Math.random()*3 + rainSeedSize;
-        rainHeights[i] = Math.random()*10 + rainSeedSize;
+        rainHeights[i] = Math.random()*5 + rainSeedSize;
         rainSpeeds[i] = 0.02 * Math.floor(rainSizes[i]*Math.random()*100);
-        rainStops[i] = Math.random()*rainTotal;
+        rainStops[i] = Math.random()*rainTotal/100;
 
         rainPositions[idx+0] = x;
         rainPositions[idx+1] = y;
@@ -121,16 +121,14 @@ function PostProcessor() {
 
     }
 
-    this.drawRain = function() {
+    this.drawRain = function(number) {
 
         rainContext.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
 
 
-        for(var i = 0; i < rainTotal; i++){
+        for(var i = 0; i < number; i++){
 
             var idx = i*2;
-
-
 
             rainContext.fillStyle = rainColors[i];
 
@@ -168,7 +166,6 @@ function PostProcessor() {
                 rainContext.closePath();
                 rainContext.stroke();
 
-
                 rainContext.beginPath();
                 rainContext.moveTo(x, ym);
                 rainContext.bezierCurveTo(x, ym - oy, xm - ox, y, xm, y);
@@ -178,13 +175,14 @@ function PostProcessor() {
                 rainContext.closePath();
                 rainContext.stroke();
 
-                x += 2;
-                y += 1;
+                x += 1;
+                y += 0.2;
 
-                _this.bubbleCalculate(x,y,w-6,w-6);
+                _this.bubbleCalculate(x,y,w-4,w-4);
                 rainContext.shadowBlur=0;
-                rainContext.fillStyle = 'white';
-                rainContext.lineWidth = 0.2;
+                rainContext.fillStyle = '#FFFAFA';
+                rainContext.globalAlpha = 0.4;
+                //rainContext.lineWidth = 0.1;
                 rainContext.beginPath();
                 rainContext.moveTo(x, ym);
                 rainContext.bezierCurveTo(x, ym - oy, xm - ox, y, xm, y);
@@ -212,9 +210,13 @@ function PostProcessor() {
         ym = y + h / 2;
     }
 
-    this.updateRain = function() {
+    this.updateRain = function(number) {
 
-        for(var i=0; i < rainTotal; i++) {
+        if(number > rainTotal)
+        {
+            number = rainTotal;
+        }
+        for(var i=0; i < number; i++) {
 
             var idx = i*2;
 
@@ -227,18 +229,18 @@ function PostProcessor() {
                     if(rainSizes[i] > rainOptions.gravityThreshold){
 
                         rainPositions[idx+1] += rainSpeeds[i];
-                        rainSpeeds[i] -= 0.1;
+                        rainSpeeds[i] -= 0.05;
                         if(rainSpeeds[i] < 0) {
-                            rainSpeeds[i] = 0;
-                            rainStops[i] = Math.random()*rainTotal;
+                            rainSpeeds[i] = 0.02 * Math.floor(rainSizes[i]*Math.random()*100);
                         }
                         rainPositions[idx] += PRIVATE_GRAVITY_FORCE_FACTOR_X * Math.floor(rainSizes[i]);
                     }
                     else{
-                        rainLives[i] -= 0.001;
+                        rainLives[i] -= 0.1;
                     }
-                    if(rainPositions[idx+1] > rainCanvas.height){
-                        rainLives[i] = 0;
+                    if(rainPositions[idx+1] > parseFloat(rainCanvas.height)){
+                        rainLives[i] = -1;
+                        rainStops[i] = Math.random()*rainTotal/100;
                     }
                 }
 
@@ -248,7 +250,7 @@ function PostProcessor() {
             }
         }
 
-        _this.drawRain();
+        _this.drawRain(number);
 
     }
 
@@ -356,12 +358,16 @@ function PostProcessor() {
 
     }
 
-    this.updateSnow = function(dt) {
+    this.updateSnow = function(dt, number) {
 
-        for(var i=0; i < snowTotal; i++) {
+        if(number > snowTotal){
+            number = snowTotal;
+        }
+
+        for(var i=0; i < number; i++) {
             if(snowSizes[i] > 0.05 && snowLives[i] > 0.0) {
                 snowLives[i] -= dt;
-                snowSizes[i] -= (Math.random() * 0.08);
+                snowSizes[i] -= (Math.random() * 0.05);
                 if(snowSizes[i] < 0.1) {
                     _this.addSnows(i, Math.random() * snowCanvas.width, Math.random() * snowCanvas.height);
                 }
@@ -370,7 +376,7 @@ function PostProcessor() {
             }
         }
 
-        _this.drawSnow();
+        _this.drawSnow(number);
     }
 
     this.addSnows = function( i, x, y ) {
@@ -390,16 +396,16 @@ function PostProcessor() {
         snowTail = Math.max(i, snowTail);
     }
 
-    this.drawSnow = function() {
+    this.drawSnow = function(number) {
 
         snowCtx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
 
         snowCtx.fillStyle = '#FFFAFA';
         snowCtx.globalAlpha = 0.8;
-        snowCtx.shadowBlur = 5;
+        snowCtx.shadowBlur = 0.1;
         snowCtx.shadowColor="white";
 
-        for(var i = 0; i < snowTotal; i++){
+        for(var i = 0; i < number; i++){
 
             var idx = i*2;
 
