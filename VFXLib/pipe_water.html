@@ -17,6 +17,18 @@
     <script src="./lib/three/examples/js/loaders/VRMLLoader.js"></script>
     <script src="./lib/three/examples/js/loaders/OBJLoader.js"></script>
 
+    <script src="./lib/three/examples/js/shaders/CopyShader.js"></script>
+    <script src="./lib/three/examples/js/shaders/BokehShader.js"></script>
+
+    <script src="./lib/three/examples/js/shaders/HorizontalBlurShader.js"></script>
+    <script src="./lib/three/examples/js/shaders/VerticalBlurShader.js"></script>
+
+    <script src="./lib/three/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="./lib/three/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="./lib/three/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="./lib/three/examples/js/postprocessing/MaskPass.js"></script>
+    <script src="./lib/three/examples/js/postprocessing/BokehPass.js"></script>
+
     <script src="./ParticleSystem.js"></script>
 </head>
 
@@ -30,6 +42,8 @@
 
         var ps;
 
+        var fog = new THREE.Fog( 0x72645b, 2, 15 );
+
         init();
         loop();
 
@@ -38,7 +52,7 @@
             container = document.createElement( 'div' );
             document.body.appendChild( container );
 
-            camera = new THREE.PerspectiveCamera( 35, window.innerWidth / window.innerHeight, 1, 15 );
+            camera = new THREE.PerspectiveCamera( 35, window.innerWidth / window.innerHeight, 1, 100 );
 
             camera.position.y = 0.8;
             camera.position.x = 2.2;
@@ -55,7 +69,7 @@
             controls.dynamicDampingFactor = 0.3;
 
             scene = new THREE.Scene();
-            scene.fog = new THREE.Fog( 0x72645b, 2, 15 );
+            scene.fog = fog;
 
             // initialize particle system;
             ps = new ParticleSystem();
@@ -67,7 +81,8 @@
                               windStrength: 0.05,
                               seedSize: 0.6,
                               seedLife: 2.0,
-                              texFile : "./textures/matcaps/permalink.jpg",
+                              texFile : "./textures/gradient.png",
+                              matcapFile: "./textures/matcaps/blue.jpg",
                               particleColor: new THREE.Color(0.1, 0.1, 1.0),
                               alpha : 0.7
             });
@@ -122,6 +137,7 @@
 
             scene.add(ps.getMesh());
 
+            //scene.add(ps.getScreenMesh());
 
             //
             var objectField = new ObjectField();
@@ -153,14 +169,12 @@
 
             // renderer
 
-            renderer = new THREE.WebGLRenderer( { antialias: true } );
-            renderer.setClearColor( scene.fog.color );
-            renderer.setPixelRatio( window.devicePixelRatio );
+            renderer = new THREE.WebGLRenderer( { antialias: true, alpha:true } );
+            renderer.setClearColor( fog.color, 0.0 );
             renderer.setSize( window.innerWidth, window.innerHeight );
 
             renderer.gammaInput = true;
             renderer.gammaOutput = true;
-
             renderer.shadowMapEnabled = true;
             renderer.shadowMapCullFace = THREE.CullFaceBack;
 
@@ -240,13 +254,11 @@
 
         function render() {
 
-            //var timer = Date.now() * 0.0005;
-            //camera.position.x = Math.sin( timer ) * 3;
-            //camera.position.z = Math.cos( timer ) * 3;
+            renderer.setClearColor( fog.color, 0.0 );
+            ps.updateTexture(renderer, camera);
 
-           // camera.lookAt( cameraTarget );
-
-            renderer.render( scene, camera );
+            renderer.setClearColor( fog.color, 1.0 );
+            renderer.render(scene, camera);
 
         }
 

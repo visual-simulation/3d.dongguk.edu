@@ -42,10 +42,22 @@ function ParticleSystem() {
     var pointMaterial;
     var pointMesh;
 
-    var basicMaterial;
-
     //
     var objectField;
+
+    //
+    var renderer;
+
+    var rtScene;
+    var rtTexture;
+    var rtMaterial;
+    var rtMesh;
+
+    var rtComposer;
+    var effectPass;
+
+    var screenMesh;
+    var screenMaterial;
 
     this.setParticle = function(i, params) {
         var idx = i*3;
@@ -131,6 +143,11 @@ function ParticleSystem() {
             pointMaterial.uniforms.texture = {type: 't', value: tex};
             pointMaterial.needsUpdate = true;
         }
+        if(params.matcapFile != undefined) {
+            var tex = THREE.ImageUtils.loadTexture(params.matcapFile);
+            screenMaterial.uniforms.matcap = {type: 't', value: tex};
+            screenMaterial.needsUpdate = true;
+        }
         if(params.particleColor != undefined) {
             particleColor = params.particleColor.clone();
             pointMaterial.uniforms.color = {type: 'c', value: particleColor};
@@ -140,8 +157,6 @@ function ParticleSystem() {
             pointMaterial.uniforms.alpha = {type: 'f', value: params.alpha};
             pointMaterial.needsUpdate = true;
         }
-
-
     }
 
     this.initialize = function(_total, params) {
@@ -153,6 +168,51 @@ function ParticleSystem() {
             }
         }
 
+        rtScene = new THREE.Scene();
+        rtTexture = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight,
+            { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
+
+
+        var positionAttrib = new THREE.BufferAttribute(new Float32Array(6*3), 3);
+        var uvAttrib       = new THREE.BufferAttribute(new Float32Array(6*2), 2);
+
+        positionAttrib.array[0] = -1.0; positionAttrib.array[1] =  1.0; positionAttrib.array[2] = 0.0;
+        positionAttrib.array[3] = -1.0; positionAttrib.array[4] = -1.0; positionAttrib.array[5] = 0.0;
+        positionAttrib.array[6] =  1.0; positionAttrib.array[7] =  1.0; positionAttrib.array[8] = 0.0;
+
+        positionAttrib.array[9]  =  1.0; positionAttrib.array[10] =  1.0; positionAttrib.array[11] = 0.0;
+        positionAttrib.array[12] = -1.0; positionAttrib.array[13] = -1.0; positionAttrib.array[14] = 0.0;
+        positionAttrib.array[15] =  1.0; positionAttrib.array[16] = -1.0; positionAttrib.array[17] = 0.0;
+
+        uvAttrib.array[0] = 0.0; uvAttrib.array[1] = 1.0;
+        uvAttrib.array[2] = 0.0; uvAttrib.array[3] = 0.0;
+        uvAttrib.array[4] = 1.0; uvAttrib.array[5] = 1.0;
+
+        uvAttrib.array[6]  = 1.0; uvAttrib.array[7]  = 1.0;
+        uvAttrib.array[8]  = 0.0; uvAttrib.array[9]  = 0.0;
+        uvAttrib.array[10] = 1.0; uvAttrib.array[11] = 0.0;
+
+        var geometry = new THREE.BufferGeometry();
+        geometry.addAttribute('position', positionAttrib);
+        geometry.addAttribute('uv'      , uvAttrib);
+
+        screenMaterial = new THREE.ShaderMaterial({
+            attributes: {
+                position : {type:'v3', value: null},
+                uv       : {type:'v2', value: null}
+            },
+            uniforms: {
+                texture  : {type: 't', value: rtTexture},
+                matcap   : {type: 't', value: null}
+            },
+            vertexShader  : loadFileToString("./shaders/screenMeshVertex.glsl"),
+            fragmentShader: loadFileToString("./shaders/screenMeshFragment.glsl"),
+            transparent : true
+        });
+
+        screenMesh = new THREE.Mesh(geometry, screenMaterial);
+
+        //
         seedVelDir = new THREE.Vector3(0, 1, 0);
         seedVelMag = 0.1;
         seedLife = 3;
@@ -182,25 +242,24 @@ function ParticleSystem() {
         pointGeometry.addAttribute('size'    , sizeBuffer);
         pointGeometry.addAttribute('rotate'  , rotationBuffer);
 
+        var attribArray = {
+            position : {type:'v3', value: null},
+            velocity : {type:'v3', value: null},
+            life     : {type:'f' , value: null},
+            size     : {type:'f' , value: null},
+            rotate   : {type:'f' , value: null}
+        };
 
-        //var tex = new THREE.ImageUtils.loadTexture();
-        //tex.minFilter = THREE.LinearFilter;
-        //tex.magFilter = THREE.LinearFilter;
+        var uniformArray = {
+            color    : {type: 'c', value: new THREE.Color(0xff0000)},
+            texture  : {type: 't', value: null},
+            maxLife  : {type: 'f', value: seedLife},
+            alpha    : {type: 'f', value: 0.0}
+        };
 
         pointMaterial = new THREE.ShaderMaterial({
-            attributes: {
-                position : {type:'v3', value: null},
-                velocity : {type:'v3', value: null},
-                life     : {type:'f' , value: null},
-                size     : {type:'f' , value: null},
-                rotate   : {type:'f' , value: null}
-            },
-            uniforms: {
-                color    : {type: 'c', value: new THREE.Color(0xff0000)},
-                texture  : {type: 't', value: null},
-                maxLife  : {type: 'f', value: seedLife},
-                alpha    : {type: 'f', value: 0.0}
-            },
+            attributes: attribArray,
+            uniforms: uniformArray,
             vertexShader  : loadFileToString("./shaders/pointCloudVert.glsl"),
             fragmentShader: loadFileToString("./shaders/pointCloudFrag.glsl"),
             transparent : true,
@@ -212,12 +271,22 @@ function ParticleSystem() {
             blendDst : THREE.DstAlphaFactor
         });
 
-        basicMaterial = new THREE.PointCloudMaterial({
-            color: 0x0000ff
+        rtMaterial = new THREE.ShaderMaterial({
+            attributes: attribArray,
+            uniforms: uniformArray,
+            vertexShader  : loadFileToString("./shaders/depthMapVertex.glsl"),
+            fragmentShader: loadFileToString("./shaders/depthMapFragment.glsl"),
+            transparent : true,
+            depthTest : true,
+            depthWrite : true
         });
-        basicMaterial.size = 10.0;
 
         pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
+        rtMesh    = new THREE.PointCloud(pointGeometry, rtMaterial);
+
+        if(rtScene != undefined) {
+            rtScene.add(rtMesh);
+        }
     }
 
     this.updateParticles = function(dt, terrain) {
@@ -241,8 +310,8 @@ function ParticleSystem() {
 
                 var pos = new THREE.Vector3(positionBuffer.array[idx+0], positionBuffer.array[idx+1], positionBuffer.array[idx+2]);
                 var vel = new THREE.Vector3(velocityBuffer.array[idx+0], velocityBuffer.array[idx+1], velocityBuffer.array[idx+2]);
-                var velMag = vel.length();
 
+                var velMag = vel.length();
                 var force = globalForce.clone();
 
                 if(windStrength > 0.0 && velMag > 0.05) {
@@ -443,5 +512,33 @@ function ParticleSystem() {
         pointMesh.geometry.addDrawCall(0,tail+1,0);
         pointMesh.renderOrder = 1000;
         return pointMesh;
+    }
+
+    this.getScreenMesh = function() {
+        return screenMesh;
+    }
+
+    this.updateTexture = function(renderer, camera) {
+
+        if(renderer == undefined) {
+            return;
+        }
+
+        if(rtComposer == undefined) {
+
+            rtComposer = new THREE.EffectComposer(renderer, rtTexture);
+            rtComposer.addPass(new THREE.RenderPass(rtScene, camera));
+
+            rtComposer.addPass(new THREE.ShaderPass( THREE.VerticalBlurShader));
+            rtComposer.addPass(new THREE.ShaderPass( THREE.HorizontalBlurShader ));
+            rtComposer.addPass(new THREE.ShaderPass( THREE.VerticalBlurShader));
+
+            var hblur = new THREE.ShaderPass( THREE.HorizontalBlurShader );
+            rtComposer.addPass( hblur );
+        }
+
+        if(rtComposer != undefined) {
+            rtComposer.render();
+        }
     }
 }
