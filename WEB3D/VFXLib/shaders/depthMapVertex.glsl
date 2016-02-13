@@ -9,6 +9,7 @@ varying float vRotate;
 varying float vLife;
 
 varying vec3 eye;
+varying float dist;
 
 void main() {
 
@@ -20,6 +21,8 @@ void main() {
     eye = normalize(vec3(mvPosition));
 
     gl_PointSize = size*(300.0/(length(mvPosition.xyz)));
+
+    dist = length(mvPosition.xyz);
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 
