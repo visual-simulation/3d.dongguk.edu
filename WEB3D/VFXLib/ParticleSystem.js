@@ -53,11 +53,17 @@ function ParticleSystem() {
     var rtMaterial;
     var rtMesh;
 
+    var maskTexture;
+    var maskMaterial;
+    var maskMesh;
+
     var rtComposer;
-    var effectPass;
 
     var screenMesh;
     var screenMaterial;
+
+    //
+    var useDecal = true;
 
     this.setParticle = function(i, params) {
         var idx = i*3;
@@ -157,6 +163,9 @@ function ParticleSystem() {
             pointMaterial.uniforms.alpha = {type: 'f', value: params.alpha};
             pointMaterial.needsUpdate = true;
         }
+        if(params.useDecal != undefined) {
+            useDecal = params.useDecal;
+        }
     }
 
     this.initialize = function(_total, params) {
@@ -170,6 +179,9 @@ function ParticleSystem() {
 
         rtScene = new THREE.Scene();
         rtTexture = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight,
+            { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
+
+        maskTexture = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight,
             { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
 
 
@@ -202,8 +214,9 @@ function ParticleSystem() {
                 uv       : {type:'v2', value: null}
             },
             uniforms: {
-                texture  : {type: 't', value: rtTexture},
-                matcap   : {type: 't', value: null}
+                texture     : {type: 't', value: rtTexture},
+                maskTexture : {type: 't', value: maskTexture},
+                matcap      : {type: 't', value: null}
             },
             vertexShader  : loadFileToString("./shaders/screenMeshVertex.glsl"),
             fragmentShader: loadFileToString("./shaders/screenMeshFragment.glsl"),
@@ -281,8 +294,17 @@ function ParticleSystem() {
             depthWrite : true
         });
 
+        maskMaterial = new THREE.ShaderMaterial({
+            attributes: attribArray,
+            uniforms: uniformArray,
+            vertexShader  : loadFileToString("./shaders/maskVertexShader.glsl"),
+            fragmentShader: loadFileToString("./shaders/maskFragmentShader.glsl"),
+            transparent : false
+        });
+
         pointMesh = new THREE.PointCloud(pointGeometry, pointMaterial);
         rtMesh    = new THREE.PointCloud(pointGeometry, rtMaterial);
+        maskMesh  = new THREE.PointCloud(pointGeometry, maskMaterial);
 
         if(rtScene != undefined) {
             rtScene.add(rtMesh);
@@ -349,10 +371,46 @@ function ParticleSystem() {
                     var h = terrain.getHeight(pos.x, pos.z);
 
                     if (h >= pos.y) {
-                        terrain.addDecal(pos);
 
-                        lifeBuffer.array[i] = 0.0;
-                        sizeBuffer.array[i] = 0.0;
+                        if(useDecal == true) {
+
+                            terrain.addDecal(pos);
+
+                            lifeBuffer.array[i] = 0.0;
+                            sizeBuffer.array[i] = 0.0;
+                        }
+                        else {
+
+                            var nor = terrain.getNormal(pos.x, pos.z).multiplyScalar(-1.0);
+                            nor.normalize();
+
+                            var d = nor.dot(vel);
+
+                            if(d < 0.0) {
+
+                                positionBuffer.array[idx+1] = h+0.1;
+
+                                var nor_vel = new THREE.Vector3();
+                                nor_vel = nor.clone().multiplyScalar(d);
+
+                                var tan_vel = new THREE.Vector3();
+                                tan_vel.subVectors(vel, nor_vel)
+
+                                var restitution = 0.0;
+                                var fraction = 0.01;
+
+                                nor_vel.multiplyScalar(-restitution);
+                                tan_vel.multiplyScalar(1.0-fraction);
+
+
+                                var new_vel = new THREE.Vector3();
+                                new_vel.addVectors(nor_vel, tan_vel);
+
+                                velocityBuffer.array[idx+0] = new_vel.x;
+                                velocityBuffer.array[idx+1] = new_vel.y;
+                                velocityBuffer.array[idx+2] = new_vel.z;
+                            }
+                        }
                     }
                 }
             }
@@ -371,8 +429,8 @@ function ParticleSystem() {
         sizeBuffer.needsUpdate     = true;
         rotationBuffer.needsUpdate = true;
 
-        pointGeometry.computeBoundingBox();
-        pointGeometry.computeBoundingSphere();
+        //pointGeometry.computeBoundingBox();
+        //pointGeometry.computeBoundingSphere();
 
         pointMesh.geometry.drawcalls.pop();
         pointMesh.geometry.addDrawCall(0,tail+1,0);
@@ -518,7 +576,7 @@ function ParticleSystem() {
         return screenMesh;
     }
 
-    this.updateTexture = function(renderer, camera) {
+    this.updateTexture = function(renderer, worldScene, camera) {
 
         if(renderer == undefined) {
             return;
@@ -527,18 +585,26 @@ function ParticleSystem() {
         if(rtComposer == undefined) {
 
             rtComposer = new THREE.EffectComposer(renderer, rtTexture);
+
             rtComposer.addPass(new THREE.RenderPass(rtScene, camera));
 
             rtComposer.addPass(new THREE.ShaderPass( THREE.VerticalBlurShader));
-            rtComposer.addPass(new THREE.ShaderPass( THREE.HorizontalBlurShader ));
+            rtComposer.addPass(new THREE.ShaderPass( THREE.HorizontalBlurShader));
             rtComposer.addPass(new THREE.ShaderPass( THREE.VerticalBlurShader));
-
-            var hblur = new THREE.ShaderPass( THREE.HorizontalBlurShader );
-            rtComposer.addPass( hblur );
+            rtComposer.addPass(new THREE.ShaderPass( THREE.HorizontalBlurShader));
+            rtComposer.addPass(new THREE.ShaderPass( THREE.VerticalBlurShader));
+            rtComposer.addPass(new THREE.ShaderPass( THREE.HorizontalBlurShader));
         }
 
         if(rtComposer != undefined) {
+
             rtComposer.render();
+
+            worldScene.add(maskMesh);
+            {
+                renderer.render(worldScene, camera, maskTexture, true);
+            }
+            worldScene.remove(maskMesh);
         }
     }
 }

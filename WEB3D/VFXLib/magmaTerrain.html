@@ -37,6 +37,8 @@
     <option value="Line">Line</option>
 </select>
 <input type="button" value="Make Flow" onclick="clickMakeFlow()">
+<input id="rad" type="range"  min="0" max="30" value="10">
+
 
 
 <script>
@@ -269,7 +271,9 @@
 
                 if(intersects.length > 0) {
 
-                    terrain.setHeight(parseInt(index.x), parseInt(index.y), mouseVel*500.0);
+                    var rad = document.getElementById("rad").value;
+
+                    terrain.setHeight(parseInt(index.x), parseInt(index.y), mouseVel*500.0, rad);
 
                 }
             }
