@@ -30,9 +30,53 @@
     <script src="./lib/three/examples/js/postprocessing/BokehPass.js"></script>
 
     <script src="./ParticleSystem.js"></script>
+
+    <style>
+        body {
+            margin: 0px;
+            background-color: #111;
+            overflow: hidden;
+            font-family: arial;
+        }
+
+        .menu { color: #fff; font-weight: bold; font-size: 12px; z-index: 100; width: 75px; position: absolute; top: 0px; padding: 16px; }
+        .menu img, .menu canvas { width: 75px; margin: 10px 0 }
+
+        #images { background: rgba(0,0,0,0); right: 100px; }
+        #backgrounds { background: rgba(0,0,0,0.0); left: 107px; }
+        #labels { background: rgba(0,0,0,0.75); left: 214px; width: 100px }
+
+        .lbl { color: #fff; z-index: 150; float:left; padding: 0.25em; width: 75px; display: block  }
+        #lbl_dst { background:#800; }
+        #lbl_src { background:green; }
+
+        .btn { background: darkorange; width: 100px; cursor: pointer }
+
+        #btn_sub { background: transparent }
+        #btn_rsub { background: transparent }
+
+        #btn_pre { background: transparent }
+
+        #btn_rsub, #btn_nopre { margin-bottom: 2em }
+
+    </style>
+
 </head>
 
 <body>
+
+    <div id="images" class="menu">
+        Captured Materials
+        <a id="img_0" href="#" onclick="onclickImg0()"><img src="textures/gradient.png" /></a>
+        <a id="img_1" href="#" onclick="onclickImg1()"><img src="textures/matcaps/blue.jpg" /></a>
+        <a id="img_2" href="#" onclick="onclickImg2()"><img src="textures/matcaps/permalink.jpg" /></a>
+        <a id="img_3" href="#" onclick="onclickImg3()"><img src="textures/matcaps/rough-aluminium.jpg" /></a>
+        <a id="img_4" href="#" onclick="onclickImg4()"><img src="textures/matcaps/fireball.jpg" /></a>
+        <a id="img_5" href="#" onclick="onclickImg5()"><img src="textures/matcaps/red.jpg" /></a>
+        <a id="img_6" href="#" onclick="onclickImg6()"><img src="textures/matcaps/green.jpg" /></a>
+        <a id="img_7" href="#" onclick="onclickImg7()"><img src="textures/matcaps/emerald.jpg" /></a>
+    </div>
+
     <script>
 
         if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
@@ -41,8 +85,49 @@
         var camera, cameraTarget, scene, renderer;
 
         var ps;
-
         var fog = new THREE.Fog( 0x72645b, 2, 15 );
+
+        var highRendered = true;
+
+        function onclickImg0() {
+            scene.add(ps.getMesh());
+            scene.remove(ps.getScreenMesh());
+        }
+        function onclickImg1() {
+            ps.setParameters({ matcapFile: "./textures/matcaps/blue.jpg" });
+            scene.remove(ps.getMesh());
+            scene.add(ps.getScreenMesh());
+        }
+        function onclickImg2() {
+            ps.setParameters({ matcapFile: "./textures/matcaps/permalink.jpg" });
+            scene.remove(ps.getMesh());
+            scene.add(ps.getScreenMesh());
+        }
+        function onclickImg3() {
+            ps.setParameters({ matcapFile: "./textures/matcaps/rough-aluminium.jpg" });
+            scene.remove(ps.getMesh());
+            scene.add(ps.getScreenMesh());
+        }
+        function onclickImg4() {
+            ps.setParameters({ matcapFile: "./textures/matcaps/fireball.jpg" });
+            scene.remove(ps.getMesh());
+            scene.add(ps.getScreenMesh());
+        }
+        function onclickImg5() {
+            ps.setParameters({ matcapFile: "./textures/matcaps/red.jpg" });
+            scene.remove(ps.getMesh());
+            scene.add(ps.getScreenMesh());
+        }
+        function onclickImg6() {
+            ps.setParameters({ matcapFile: "./textures/matcaps/green.jpg" });
+            scene.remove(ps.getMesh());
+            scene.add(ps.getScreenMesh());
+        }
+        function onclickImg7() {
+            ps.setParameters({ matcapFile: "./textures/matcaps/emerald.jpg" });
+            scene.remove(ps.getMesh());
+            scene.add(ps.getScreenMesh());
+        }
 
         init();
         loop();
@@ -62,11 +147,17 @@
 
             controls.rotateSpeed = 0.3;
 
-            controls.noZoom = true;
+            controls.noZoom = false;
             controls.noPan = true;
 
             controls.staticMoving = true;
             controls.dynamicDampingFactor = 0.3;
+
+            controls.minPolarAngle = 0;
+            controls.maxPolarAngle = Math.PI;
+
+            controls.minAzimuthAngle = -Math.PI*0.4;
+            controls.maxAzimuthAngle =  Math.PI*0.4;
 
             scene = new THREE.Scene();
             scene.fog = fog;
@@ -135,9 +226,8 @@
                 scene.add(object);
             });
 
-            scene.add(ps.getMesh());
-
-            //scene.add(ps.getScreenMesh());
+            //scene.add(ps.getMesh());
+            scene.add(ps.getScreenMesh());
 
             //
             var objectField = new ObjectField();
