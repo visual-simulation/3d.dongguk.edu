@@ -70,7 +70,7 @@
 
     var clock = new THREE.Clock();
 
-    var pps, quake;
+    var pps, earthquake_state;
 
     init();
     animate();
@@ -78,7 +78,7 @@
 
     function init() {
 
-        quake = false;
+        earthquake_state = false;
         container = document.createElement( 'div' );
         document.body.appendChild( container );
 
@@ -165,11 +165,11 @@
 
     function onKeyDown(e) {
         if(e.keyCode == "69"){
-            if(quake){
-                quake = false;
+            if(earthquake_state){
+                earthquake_state = pps.changeState(earthquake_state);
             }
             else {
-                quake = true;
+                earthquake_state = pps.changeState(earthquake_state);
             }
         }
     }
@@ -333,7 +333,7 @@
 
         loader.load( "lib/three/examples/models/animated/horse.js", function( geometry ) {
 
-            for ( var i = - 600; i < 601; i += 2 ) {
+            for ( var i = - 400; i < 400; i += 8 ) {
 
                 addMorph( geometry, 550, 1, 100 - Math.random() * 3000, FLOOR, i, true, true );
 
@@ -366,7 +366,7 @@
 
             morph.position.x += morph.speed * delta;
 
-            if ( morph.position.x  > 2000 )  {
+            if ( morph.position.x  > 1000 )  {
 
                 morph.position.x = -1000 - Math.random() * 500;
 
@@ -374,8 +374,8 @@
 
         }
 
-        if(quake){
-            camera = pps.earthquake(camera, 30, 0, 10);
+        if(earthquake_state){
+            camera = pps.earthquake(camera, 80, 100, 10);
         }
         controls.update( delta );
 
