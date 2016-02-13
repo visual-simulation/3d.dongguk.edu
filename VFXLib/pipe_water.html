@@ -184,7 +184,7 @@
                     new THREE.MeshPhongMaterial( { color: 0x555555, specular: 0x000000 } )
             );
             plane.rotation.x = -Math.PI/2;
-            plane.position.y = -0.5;
+            plane.position.y = -0.55;
             plane.receiveShadow = true;
 
             scene.add( plane );
@@ -345,7 +345,7 @@
         function render() {
 
             renderer.setClearColor( fog.color, 0.0 );
-            ps.updateTexture(renderer, camera);
+            ps.updateTexture(renderer, scene, camera);
 
             renderer.setClearColor( fog.color, 1.0 );
             renderer.render(scene, camera);

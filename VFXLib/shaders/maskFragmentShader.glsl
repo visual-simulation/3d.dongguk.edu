@@ -20,11 +20,5 @@ varying float dist;
 
      if(len > 0.5) discard;
 
-     float u = len/0.5;
-     float weight = 15.0/16.0*(1.0-u*u);
-
-     float dep = gl_FragCoord.z / gl_FragCoord.w;
-     dep = dep * weight;
-
-     gl_FragColor = vec4(dep, dep, dep, 1.0);
+     gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
  }

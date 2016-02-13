@@ -19,6 +19,18 @@
 <script src="./lib/three/examples/js/libs/stats.min.js"></script>
 <script type="text/javascript" src="./dat.gui.min.js"></script>
 
+<script src="./lib/three/examples/js/shaders/CopyShader.js"></script>
+<script src="./lib/three/examples/js/shaders/BokehShader.js"></script>
+
+<script src="./lib/three/examples/js/shaders/HorizontalBlurShader.js"></script>
+<script src="./lib/three/examples/js/shaders/VerticalBlurShader.js"></script>
+
+<script src="./lib/three/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="./lib/three/examples/js/postprocessing/RenderPass.js"></script>
+<script src="./lib/three/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="./lib/three/examples/js/postprocessing/MaskPass.js"></script>
+<script src="./lib/three/examples/js/postprocessing/BokehPass.js"></script>
+
 <script src="./lib/three/examples/js/controls/OrbitControls.js"></script>
 <script src="./lib/three/examples/js/controls/TrackballControls.js"></script>
 
@@ -37,7 +49,7 @@
     <option value="Line">Line</option>
 </select>
 <input type="button" value="Make Flow" onclick="clickMakeFlow()">
-<input id="rad" type="range"  min="0" max="30" value="10" onchange="changeRadian()">
+<input id="rad" type="range"  min="0" max="30" value="10">
 
 
 <script>
@@ -73,19 +85,21 @@
 
     var psParams = {blendingType : THREE.NormalBlending};
 
-    particleSystem.initialize(1000, psParams);
+    particleSystem.initialize(30000, psParams);
 
     particleSystem.setParameters({
-        seedVelDir: new THREE.Vector3(0.0,-1,0),
-        seedVelMag: 120.0,
-        globalForce: new THREE.Vector3(0, -0.1, 0),
-        windStrength: 10,
-        seedSize: 60,
-        seedLife: 5.0,
+        seedVelDir: new THREE.Vector3(-1.0,0.0,0.0),
+        seedVelMag: 200.0,
+        globalForce: new THREE.Vector3(0, -100.0, 0),
+        windStrength: 0.0,
+        seedSize: 100,
+        seedLife: 30.0,
         texFile: "./textures/leaf.png",
+        matcapFile: "./textures/matcaps/blue.jpg",
         particleColor: new THREE.Color(0Xaaaa00),
         angularVel : 0.005,
         alpha: 1.0,
+        useDecal: false
     });
 
 
@@ -97,14 +111,11 @@
     var terrainParams = {terrainImage:"./textures/rock.jpg",
                          terrainImage1:"./textures/grass.jpg",
                          decalImage:"./textures/leaf.png",
-                         decalColor:0xffaa00
-                         //load:'./models/magma_mountain.json'
+                         decalColor:0xffaa00,
+                         load:'./models/waterTerrain.json'
                          };
 
     terrain.initialize(min, max, 200, 200, 10000, 20, terrainParams);
-
-
-    var flowLines = new FlowLines();
 
 
     // drawing line
@@ -115,7 +126,7 @@
     lineGeometry.drawcalls.pop();
     lineGeometry.addDrawCall(0,drawCount,0);
 
-    var lineMaterial = new THREE.LineBasicMaterial({linewidth:20, color:0xff0000, depthTest:true});
+    var lineMaterial = new THREE.LineBasicMaterial({linewidth:20, color:0xff0000});
     var lineMesh = new THREE.Line(lineGeometry, lineMaterial);
 
 
@@ -143,7 +154,7 @@
                 depthWrite: false,
                 side: THREE.BackSide
 
-            });
+            } );
 
     var skyBoxMesh = new THREE.Mesh( new THREE.BoxGeometry( 10000, 10000, 10000 ), material );
 
@@ -170,15 +181,11 @@
         camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 100000 );
         camera.setLens(18);
 
-        //camera.position.y = 1000;
-        //camera.position.x = 10;
-        //camera.position.z = 2000;
-
         var camScale = 0.5;
 
         camera.position.y =   800*camScale;
-        camera.position.x = -3000*camScale;
-        camera.position.z =  2000*camScale;
+        camera.position.x = -1000*camScale;
+        camera.position.z = -3000*camScale;
 
         scene = new THREE.Scene();
         scene.fog = new THREE.Fog( 0x59472b, 1, 10000 );
@@ -200,13 +207,13 @@
 
         scene.add(plane);
         scene.add(terrain.getMesh());
+
         //scene.add(terrain.getDecalMesh());
         //scene.add(particleSystem.getMesh());
+        scene.add(particleSystem.getScreenMesh());
 
-        scene.add(flowLines.getMesh());
 
         scene.add(lineMesh);
-
         scene.add(skyBoxMesh);
 
         //
@@ -345,14 +352,13 @@
         stats.begin();
 
 
-        //var cen = new THREE.Vector3(0,500,0);
-        //var nor = new THREE.Vector3(0,-1,0);
-        //var rad = 500;
+        var cen = new THREE.Vector3(1800,1500,1300);
+        var nor = new THREE.Vector3(1,0,0);
+        var rad = 200;
 
-        //particleSystem.addParticlesFromDisk(2, cen, nor, rad);
-        //particleSystem.updateParticles(dt, terrain);
 
-        flowLines.update(dt);
+        particleSystem.addParticlesFromDisk(20, cen, nor, rad);
+        particleSystem.updateParticles(dt, terrain);
 
         controls.update();
 
@@ -362,6 +368,11 @@
     }
 
     function render() {
+
+        renderer.setClearColor(0xffffff , 0.0 );
+        particleSystem.updateTexture(renderer, scene, camera);
+
+        renderer.setClearColor(0xffffff , 1.0 );
         renderer.render( scene, camera );
     }
 
@@ -373,13 +384,9 @@
 
     function clickSaveLine() {
 
-        flowLines.save("line.json");
-
     }
 
     function clickRefresh() {
-
-        flowLines.updateTerrain(terrain);
 
     }
 
@@ -406,12 +413,6 @@
         drawCount = 0;
         lineGeometry.drawcalls.pop();
         lineGeometry.addDrawCall(0,drawCount,0);
-
-        flowLines.updateTerrain(terrain);
-    }
-
-    function changeRadian() {
-
     }
 
 </script>

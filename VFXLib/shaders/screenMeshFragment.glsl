@@ -3,7 +3,7 @@ precision mediump int;
 
 uniform sampler2D texture;
 uniform sampler2D matcap;
-uniform sampler2D mask;
+uniform sampler2D maskTexture;
 
 varying vec3 eye;
 varying vec2 vuv;
@@ -14,7 +14,9 @@ float ap = 10.0;
 void main() {
 
 	vec4 depth = texture2D(texture, vuv);
+	vec4 mask  = texture2D(maskTexture, vuv);
 
+	if(mask.x != 1.0) discard;
 	if(depth.w <= 0.0) discard;
 
 	vec4 z1 = texture2D(texture, vuv+vec2(dd,0.0)) - texture2D(texture, vuv-vec2(dd,0.0));

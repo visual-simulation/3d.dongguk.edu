@@ -315,15 +315,37 @@ function AdditiveTerrain() {
         return val;
     }
 
-    this.setHeight = function(ci, cj, h) {
+    this.getNormal = function(x, z) {
 
-        var d = 10.0;
+        var i = parseInt((x-min.x)/dx);
+        var j = parseInt((z-min.z)/dz);
 
-        var start_i = Math.max(ci-d-10, 0);
-        var end_i   = Math.min(ci+d+10, iRes-1);
+        var idx = parseInt(j*iRes+i);
 
-        var start_j = Math.max(cj-d-10, 0);
-        var end_j   = Math.min(cj+d+10, jRes-1);
+        var p = new THREE.Vector2((min.x)+i*dx, (min.z)+j*dz);
+
+        var v00 = new THREE.Vector3(normalAttrib.array[idx*3+0], normalAttrib.array[idx*3+1], normalAttrib.array[idx*3+2]);
+        var v01 = new THREE.Vector3(normalAttrib.array[(idx+1)*3+0], normalAttrib.array[(idx+1)*3+1], normalAttrib.array[(idx+1)*3+2]);
+        var v10 = new THREE.Vector3(normalAttrib.array[(idx+iRes)*3+0], normalAttrib.array[(idx+iRes)*3+1], normalAttrib.array[(idx+iRes)*3+2]);
+        var v11 = new THREE.Vector3(normalAttrib.array[(idx+iRes+1)*3+0], normalAttrib.array[(idx+iRes+1)*3+1], normalAttrib.array[(idx+iRes+1)*3+2]);
+
+        var vv0 = new THREE.Vector3().addVectors( v00.multiplyScalar(1.0-(x-p.x)/dx), v01.multiplyScalar((x-p.x)/dx));
+        var vv1 = new THREE.Vector3().addVectors( v10.multiplyScalar(1.0-(x-p.x)/dx), v11.multiplyScalar((x-p.x)/dx));
+
+        var val = new THREE.Vector3().addVectors( vv0.multiplyScalar(1.0-(z-p.y)/dz), vv1.multiplyScalar((z-p.y)/dz));
+
+        return val;
+    }
+
+    this.setHeight = function(ci, cj, h, rad) {
+
+        var d = rad;
+
+        var start_i = Math.max(ci-d-3, 0);
+        var end_i   = Math.min(ci+d+3, iRes-1);
+
+        var start_j = Math.max(cj-d-3, 0);
+        var end_j   = Math.min(cj+d+3, jRes-1);
 
         var center = new THREE.Vector2(ci,cj);
 
