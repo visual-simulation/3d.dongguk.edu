@@ -107,8 +107,8 @@
     particleSystem.setParameters({seedLife : 1});
 
 
-    var mesh,mesh1,mesh2;
-    var material_shh,material_shh1,material_shh2,material_shh3;
+    var mesh;
+    var material_shh=[];
     var scene,camera,webGLRenderer,textureGrass,texture,texture2,planeGeometry;
 
     // once everything is loaded, we run our Three.js stuff.
@@ -141,7 +141,7 @@
 
         texture = THREE.ImageUtils.loadTexture("./textures/character.png");
 
-        texture2= THREE.ImageUtils.loadTexture("./textures/snowflake.png");
+        texture2= THREE.ImageUtils.loadTexture("./textures/terrain.png");
 
 
         planeGeometry = new THREE.PlaneBufferGeometry(500, 500, 20, 20);
@@ -168,7 +168,7 @@
         var spotLight1 = new THREE.DirectionalLight(0xefefff,2);
         spotLight1.position.set(-1,-1,-1).normalize();
         scene.add(spotLight1);
-
+        scene.fog = new THREE.Fog(0xffffff, 0.0015, 1000);
         // add the output of the renderer to the html element
         document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
 
@@ -178,133 +178,80 @@
 
 
         var times=20;
-        var max,max1,max2,nax3;
-        var min,min1,min2,min3;
-        var alpha=0.0;
-        var alpha1=0.0;
-        var alpha2=0.0;
+        var alpha=[];
         var clock = new THREE.Clock();
-
+        var arraymax=[];
+        var arraymin=[];
         var loader = new THREE.JSONLoader();
-
-        loader.load('./models/character.json', function (model) {
-
-            material_shh = new THREE.ShaderMaterial({
-                uniforms: {
-                    tOne: { type: "t", value: texture },
-                    tSec: { type: "t", value: texture2 },
-                    alpha:{type:"f",value:alpha}
-                },
-                vertexShader: vertShader,
-                fragmentShader: fragShader,
-                transparent: true,
-                skinning : true
-            });
-
-
-            mesh = new THREE.SkinnedMesh(model,material_shh,false);
-            mesh.scale.set(times,times,times);
-            //mesh.rotation.y = 90*Math.PI/180;
-            mesh.position.z=20;
-           // mesh.geometry.computeBoundingBox();
-
-            var bbox = new THREE.BoundingBoxHelper( mesh, 0x00ff00 );
-            bbox.update();
-
-            var animation = new THREE.Animation(mesh, mesh.geometry.animations[0]);
-
-            scene.add(mesh);
-
-            // start the animation
-
-            animation.play(40);
-
-            max=bbox.box.max;
-            min=bbox.box.min;
-
-        }, './models/');
+        var s=18;
+        for(var i=0;i<s;i++){
+            (function(i,s){
+            loader.load('./models/character.json', function (model) {
+                alpha[i]=0.0;
+                material_shh[i] = new THREE.ShaderMaterial({
+                    uniforms: {
+                        tOne: { type: "t", value: texture },
+                        tSec: { type: "t", value: texture2 },
+                        alpha:{type:"f",value:alpha[i]}
+                    },
+                    vertexShader: vertShader,
+                    fragmentShader: fragShader,
+                    transparent: true,
+                    skinning : true
+                });
 
 
-        loader.load('./models/character.json', function (model) {
-
-            material_shh1 = new THREE.ShaderMaterial({
-                uniforms: {
-                    tOne: { type: "t", value: texture },
-                    tSec: { type: "t", value: texture2 },
-                    alpha:{type:"f",value:alpha1}
-                },
-                vertexShader: vertShader,
-                fragmentShader: fragShader,
-                transparent: true,
-                skinning : true
-            });
-
-
-            mesh1 = new THREE.SkinnedMesh(model,material_shh1,false);
-            mesh1.scale.set(times,times,times);
-            mesh1.rotation.y = 90*Math.PI/180;
-            mesh1.position.x=20;
-
-            // mesh.geometry.computeBoundingBox();
-
-            var bbox = new THREE.BoundingBoxHelper( mesh1, 0x00ff00 );
-            bbox.update();
-
-            var animation = new THREE.Animation(mesh1, mesh1.geometry.animations[0]);
-
-            scene.add(mesh1);
-
-            // start the animation
-            animation.play(0);
-
-            max1=bbox.box.max;
-            min1=bbox.box.min;
-
-        }, './models/');
-
-        loader.load('./models/character.json', function (model) {
-
-            material_shh2 = new THREE.ShaderMaterial({
-                uniforms: {
-                    tOne: { type: "t", value: texture },
-                    tSec: { type: "t", value: texture2 },
-                    alpha:{type:"f",value:alpha2}
-                },
-                vertexShader: vertShader,
-                fragmentShader: fragShader,
-                transparent: true,
-                skinning : true
-            });
+                mesh = new THREE.SkinnedMesh(model,material_shh[i],false);
+                mesh.scale.set(times,times,times);
+                mesh.rotation.y =180*Math.random()*90*Math.PI/180;
+                //mesh.position.z=-220+i*20;
+                if(s<=24){
+                    mesh.position.x=-220+(24-s)*10+(i)*20;
+                    //mesh.position.z=40;
+                }
+                if(s>24){
+                    mesh.position.x=-220+i*20;
+                }
+                if(s<=50&&i>24){
+                    mesh.position.x=-220+(i-25)*20;
+                    mesh.position.z=40;
+                }
 
 
-            mesh2 = new THREE.SkinnedMesh(model,material_shh2,false);
-            mesh2.scale.set(times,times,times);
-            mesh2.rotation.y = 180*Math.PI/180;
-            //mesh.position.x=-20;
-            mesh2.position.z=-20;
 
-            // mesh.geometry.computeBoundingBox();
+                //mesh.position.z=-220+i*20;
+               // mesh.position.x=-220+i*20;
+                // mesh.geometry.computeBoundingBox();
 
-            var bbox = new THREE.BoundingBoxHelper( mesh2, 0x00ff00 );
-            bbox.update();
+                var bbox = new THREE.BoundingBoxHelper( mesh, 0x00ff00 );
+                bbox.update();
 
-            var animation = new THREE.Animation(mesh2, mesh2.geometry.animations[0]);
+                var animation = new THREE.Animation(mesh, mesh.geometry.animations[0]);
 
-            scene.add(mesh2);
+                scene.add(mesh);
 
-            // start the animation
-            animation.play(20);
+                // start the animation
 
-            max2=bbox.box.max;
-            min2=bbox.box.min;
+                animation.play();
 
-        }, './models/');
+                arraymax[i]=bbox.box.max;
+                arraymin[i]=bbox.box.min;
 
+
+            }, './models/');
+            })(i,s);
+       }
+      /*  var controls = new function () {
+            this.num = s;
+        };
+        var gui = new dat.GUI();
+        gui.add(controls, 'num', 0, 50);*/
         render();
         var time;
 
         function render() {
             stats.update();
+
 
             var delta = clock.getDelta();
             orbitControls.update(delta);
@@ -327,49 +274,25 @@
 
                 var p = particleSystem.getParticle(i).position;
 
-                if(min != undefined && max != undefined) {
+                for(var k=0;k<material_shh.length;k++ ){
+                    if(arraymin[k] != undefined && arraymax[k] != undefined) {
 
-                    if(min.x <= p.x && min.y <= p.y && min.z <= p.z &&
-                            max.x >= p.x && max.y >= p.y && max.z >= p.z ) {
-                        if(alpha<1.0){
-                            alpha+=0.001;
-
-                            material_shh.uniforms.alpha = {type:"f",value:alpha};
-                            material_shh.needsUpdate = true;
-                            //THREE.AnimationHandler.update(dt);
+                        if(arraymin[k].x <= p.x && arraymin[k].y <= p.y && arraymin[k].z <= p.z &&
+                                arraymax[k].x >= p.x && arraymax[k].y >= p.y && arraymax[k].z >= p.z ) {
+                            if(alpha[k]<1.0){
+                                alpha[k]+=0.01;
+                                //alert(alpha[k]);
+                                material_shh[k].uniforms.alpha = {type:"f",value:alpha[k]};
+                                material_shh[k].needsUpdate = true;
+                                //THREE.AnimationHandler.update(dt);
+                            }
                         }
                     }
                 }
-                if(min1 != undefined && max1 != undefined) {
 
-                    if(min1.x <= p.x && min1.y <= p.y && min1.z <= p.z &&
-                            max1.x >= p.x && max1.y >= p.y && max1.z >= p.z ) {
-                        if(alpha1<1.0){
-                            alpha1+=0.001;
-
-                            material_shh1.uniforms.alpha = {type:"f",value:alpha1};
-                            material_shh1.needsUpdate = true;
-                            //THREE.AnimationHandler.update(dt);
-                        }
-                    }
-                }
-                if(min2 != undefined && max2 != undefined) {
-
-                    if(min2.x <= p.x && min2.y <= p.y && min2.z <= p.z &&
-                            max2.x >= p.x && max2.y >= p.y && max2.z >= p.z ) {
-                        if(alpha2<1.0){
-                            alpha2+=0.005;
-
-                            material_shh2.uniforms.alpha = {type:"f",value:alpha2};
-                            material_shh2.needsUpdate = true;
-                            //THREE.AnimationHandler.update(dt);
-                        }
-                    }
-                }
             }
 
             THREE.AnimationHandler.update(dt);
-
             requestAnimationFrame(render);
             // render using requestAnimationFrame
             webGLRenderer.render(scene, camera);
