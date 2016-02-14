@@ -109,14 +109,14 @@
 <script type="text/javascript">
 
     var particleSystem = new ParticleSystem();
-    particleSystem.initialize(1000);
+    particleSystem.initialize(10000);
 
     particleSystem.setParameters(Examples.snowStorm);
 
     particleSystem.setParameters({
         seedSize : 4.0,
         seedVelMag : 100.0,
-        windStrength: 1.5,
+        windStrength: 3,
         seedLife : 10,
     });
 
@@ -125,8 +125,13 @@
     var min = new THREE.Vector3(-300.0, 0.0, -300.0);
     var max = new THREE.Vector3( 300.0, 0.0,  300.0);
 
-    var terrainParams = {terrainImage:"./textures/grass.jpg", decalImage:"./textures/snowflake.png", decalColor:0xffffff};
-    terrain.initialize(min, max, 1000, 1000, 100000, 0.5, terrainParams);
+    var terrainParams = {terrainImage:"./textures/rock.jpg",
+        terrainImage1:"./textures/grass.jpg",
+        decalImage:"./textures/snowflake.png",
+        decalColor:0xffffff,
+        load:'./models/dongsan.json'
+    };
+    terrain.initialize(min, max, 200, 200, 50000, 0.8, terrainParams);
 
     var path = "./textures/skybox/";
     var format = '.jpg';
@@ -178,7 +183,7 @@
 
         // position and point the camera to the center of the scene
         camera.position.x = 100;
-        camera.position.y = 100;
+        camera.position.y = 50;
         camera.position.z = 50;
         camera.lookAt(new THREE.Vector3(0, 0, 0));
 
@@ -262,8 +267,10 @@
                 newPos.addVectors(min, dirX);
                 newPos.addVectors(newPos, dirZ);
 
+                var height = terrain.getHeight(newPos.x, newPos.z);
+
                 mesh.position.x = newPos.x;
-                mesh.position.y = newPos.y;
+                mesh.position.y = newPos.y + height;
                 mesh.position.z = newPos.z;
 
                 var bbox = new THREE.BoundingBoxHelper( mesh, 0x00ff00 );
