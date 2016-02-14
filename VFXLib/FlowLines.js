@@ -66,7 +66,7 @@ function FlowLines() {
         positionAttrib.needsUpdate = true;
     }
 
-    this.generateGeometry = function() {
+    this.generateGeometry = function(params) {
 
         var numTri = (totalIRes-1)*(totalJRes-1)*2;
         var vertexTotal = totalIRes * totalJRes;
@@ -129,13 +129,13 @@ function FlowLines() {
         geometry.addAttribute('alpha'   , alphaAttrib   );
 
 
-
         var texture = new THREE.ImageUtils.loadTexture("./textures/resizeFlame.jpg");
         texture.minFilter = THREE.LinearFilter;
         texture.magFilter = THREE.LinearFilter;
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
         texture.repeat.set(100, 100);
+
 
         var basicMaterial = new THREE.MeshBasicMaterial({color: new THREE.Color(0xffffff), map:texture});
 
@@ -156,8 +156,28 @@ function FlowLines() {
             transparent: true
         });
 
-
         mesh = new THREE.Mesh(geometry, flowMaterial);
+
+        //
+        if(params != undefined) {
+            if(params.velocity != undefined) {
+                velocity = params.velocity;
+                flowMaterial.uniforms.velocity = {type:'f', value:velocity};
+                flowMaterial.needsUpdate = true;
+            }
+            if(params.textureName != undefined) {
+                var tex = new THREE.ImageUtils.loadTexture(params.textureName);
+
+                tex.minFilter = THREE.LinearFilter;
+                tex.magFilter = THREE.LinearFilter;
+                tex.wrapS = THREE.RepeatWrapping;
+                tex.wrapT = THREE.RepeatWrapping;
+                tex.repeat.set(100, 100);
+
+                flowMaterial.uniforms.texture = {type:'t', value: tex};
+                flowMaterial.needsUpdate = true;
+            }
+        }
     }
 
     this.getMesh = function() {
