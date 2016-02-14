@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>three.js webgl</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            font-family: Monospace;
+            background-color: #f0f0f0;
+            margin: 0px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<script src="./lib/three/build/three.min.js"></script>
+<script src="./lib/three/examples/js/libs/stats.min.js"></script>
+<script type="text/javascript" src="./dat.gui.min.js"></script>
+
+<script src="./lib/three/examples/js/controls/OrbitControls.js"></script>
+<script src="./lib/three/examples/js/controls/TrackballControls.js"></script>
+
+<script src="./ParticleSystem.js"></script>
+<script src="./paticleParameter.js"></script>
+<script src="./AdditiveTerrain.js"></script>
+<script src="./FlowLines.js"></script>
+
+
+<input type="button" value="Save Terrain" onclick="clickSaveTerrain()">
+<input type="button" value="Save Line" onclick="clickSaveLine()">
+<input type="button" value="Refresh" onclick="clickRefresh()">
+<select id="mode" onchange="changeMode()">
+    <option value="Normal">Normal</option>
+    <option value="Terrain">Terrain</option>
+    <option value="Line">Line</option>
+</select>
+<input type="button" value="Make Flow" onclick="clickMakeFlow()">
+<input id="rad" type="range"  min="0" max="30" value="10">
+
+
+
+<script>
+
+    var container, stats;
+    var camera, scene, projector, renderer;
+    var mesh, animation;
+
+    var ps;
+
+    var gui;
+    var controls;
+
+
+    var mouse = new THREE.Vector2();
+    var index = new THREE.Vector2();
+    var mouseVel = 0.0;
+
+    var offset = new THREE.Vector3();
+
+    var raycaster = new THREE.Raycaster();
+
+    var objects = [];
+    var plane = new THREE.Mesh(
+            new THREE.PlaneBufferGeometry( 10000, 10000, 8, 8 ),
+            new THREE.MeshBasicMaterial( { visible: false } )
+    );
+
+    var selected = false;
+
+    particleSystem = new ParticleSystem();
+
+
+    var psParams = {blendingType : THREE.NormalBlending};
+
+    particleSystem.initialize(1000, psParams);
+
+    particleSystem.setParameters({
+        seedVelDir: new THREE.Vector3(0.0,-1,0),
+        seedVelMag: 120.0,
+        globalForce: new THREE.Vector3(0, -0.1, 0),
+        windStrength: 10,
+        seedSize: 60,
+        seedLife: 5.0,
+        texFile: "./textures/leaf.png",
+        particleColor: new THREE.Color(0Xaaaa00),
+        angularVel : 0.005,
+        alpha: 1.0,
+    });
+
+
+    var terrain = new AdditiveTerrain();
+
+    var min = new THREE.Vector3(-2000.0, 0.0, -2000.0);
+    var max = new THREE.Vector3( 2000.0, 0.0,  2000.0);
+
+    var terrainParams = {terrainImage:"./textures/rock.jpg",
+                         terrainImage1:"./textures/grass.jpg",
+                         decalImage:"./textures/leaf.png",
+                         decalColor:0xffaa00,
+                         load:'./models/waterFlowTerrain.json'
+                         };
+
+    terrain.initialize(min, max, 200, 200, 10000, 20, terrainParams);
+
+
+    var flowLines = new FlowLines();
+
+    var params = {
+        textureName: "./textures/water-texture.jpg",
+        velocity: -2.0
+    };
+
+    flowLines.addLinesPointsFromJSON('./models/waterLine.json');
+    flowLines.generate();
+    flowLines.generateGeometry(params);
+
+    flowLines.updateTerrain(terrain);
+
+    // drawing line
+    var lineGeometry = new THREE.BufferGeometry();
+    lineGeometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(100*3), 3));
+
+    var drawCount = 0;
+    lineGeometry.drawcalls.pop();
+    lineGeometry.addDrawCall(0,drawCount,0);
+
+    var lineMaterial = new THREE.LineBasicMaterial({linewidth:20, color:0xff0000});
+    var lineMesh = new THREE.Line(lineGeometry, lineMaterial);
+
+
+    // Skybox
+
+    var path = "./textures/skybox/";
+    var format = '.jpg';
+    var urls = [
+        path + 'px' + format, path + 'nx' + format,
+        path + 'py' + format, path + 'ny' + format,
+        path + 'pz' + format, path + 'nz' + format
+    ];
+
+    var textureCube = THREE.ImageUtils.loadTextureCube( urls );
+    textureCube.mapping = THREE.CubeRefractionMapping;
+
+    var shader = THREE.ShaderLib[ "cube" ];
+    shader.uniforms[ "tCube" ].value = textureCube;
+
+    var material = new THREE.ShaderMaterial( {
+
+                fragmentShader: shader.fragmentShader,
+                vertexShader: shader.vertexShader,
+                uniforms: shader.uniforms,
+                depthWrite: false,
+                side: THREE.BackSide
+
+            } );
+
+    var skyBoxMesh = new THREE.Mesh( new THREE.BoxGeometry( 10000, 10000, 10000 ), material );
+
+
+    init();
+    //animate();
+    loop();
+
+    function init() {
+
+        container = document.createElement( 'div' );
+        document.body.appendChild( container );
+
+        var info = document.createElement( 'div' );
+        info.style.position = 'absolute';
+        info.style.top = '10px';
+        info.style.width = '100%';
+        info.style.textAlign = 'center';
+
+        container.appendChild( info );
+
+        //
+
+        camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 100000 );
+        camera.setLens(18);
+
+        var camScale = 0.5;
+
+        camera.position.y =  2000*camScale;
+        camera.position.x =  3000*camScale;
+        camera.position.z = -2000*camScale;
+
+        scene = new THREE.Scene();
+        scene.fog = new THREE.Fog( 0x59472b, 1, 10000 );
+
+        //
+
+        var light = new THREE.DirectionalLight( 0xefefff, 2 );
+        light.position.set( 1, 1, 1 ).normalize();
+        light.castShadow = true;
+        scene.add( light );
+
+
+        var light = new THREE.DirectionalLight( 0xffefef, 2 );
+        light.position.set( -1, -1, -1 ).normalize();
+        light.castShadow = true;
+        scene.add( light );
+
+        objects.push(terrain.getMesh());
+
+        scene.add(plane);
+        scene.add(terrain.getMesh());
+        //scene.add(terrain.getDecalMesh());
+        //scene.add(particleSystem.getMesh());
+
+        scene.add(flowLines.getMesh());
+
+        scene.add(lineMesh);
+
+        scene.add(skyBoxMesh);
+
+        //
+
+        renderer = new THREE.WebGLRenderer( { antialias: true } );
+        renderer.setClearColor( scene.fog.color );
+        //renderer.setPixelRatio( window.devicePixelRatio );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        container.appendChild(renderer.domElement);
+
+        //
+
+        stats = new Stats();
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.top = '0px';
+        //container.appendChild( stats.domElement );
+
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+
+        window.addEventListener( 'resize', onWindowResize, false );
+
+        renderer.domElement.addEventListener('mousemove', onDocumentMouseMove, false);
+        renderer.domElement.addEventListener('mousedown', onDocumentMouseDown, false);
+        renderer.domElement.addEventListener('mouseup'  , onDocumentMouseUp  , false);
+
+    }
+
+    function onDocumentMouseMove(event) {
+
+        event.preventDefault();
+
+        var tempY = mouse.y;
+
+        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+        mouseVel = mouse.y - tempY;
+
+        raycaster.setFromCamera( mouse, camera );
+        var mode = document.getElementById('mode').value;
+
+        if(mode == 'Terrain') {
+
+            if(selected == true) {
+
+                var intersects = raycaster.intersectObject( plane );
+
+                if(intersects.length > 0) {
+
+                    var rad = document.getElementById("rad").value;
+
+                    terrain.setHeight(parseInt(index.x), parseInt(index.y), mouseVel*500.0, rad);
+
+                }
+            }
+
+        }
+    }
+
+    function onDocumentMouseDown(event) {
+
+        event.preventDefault();
+
+        raycaster.setFromCamera( mouse, camera );
+
+        var intersects = raycaster.intersectObjects(objects);
+        var mode = document.getElementById('mode').value;
+
+        if(intersects.length > 0) {
+
+            if(mode == 'Terrain') {
+
+                controls.enabled = false;
+                selected = true;
+
+                plane.position.copy(intersects[0].point);
+                plane.lookAt(camera.position);
+
+                index = terrain.getIndex(intersects[0].point);
+
+            }
+            else if(mode == 'Line') {
+
+                var positions = lineGeometry.attributes.position.array;
+                var idx = drawCount;
+
+                positions[idx*3+0] = intersects[0].point.x;
+                positions[idx*3+1] = intersects[0].point.y;
+                positions[idx*3+2] = intersects[0].point.z;
+
+                drawCount++;
+
+                lineGeometry.attributes.position.needsUpdate = true;
+
+                lineGeometry.drawcalls.pop();
+                lineGeometry.addDrawCall(0,drawCount,0);
+            }
+        }
+    }
+
+    function onDocumentMouseUp(event) {
+
+        event.preventDefault();
+
+        controls.enabled = true;
+
+        selected = false;
+
+    }
+
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+    }
+
+    //
+    var fps = 40;
+    var time;
+    var accTime = 0.0;
+
+    function loop() {
+
+        setTimeout(loop, 1000/fps);
+
+        var now = new Date().getTime();
+        var dt = (now - (time||now))/1000;
+        time = now;
+
+        accTime += dt;
+
+        stats.begin();
+
+
+        //var cen = new THREE.Vector3(0,500,0);
+        //var nor = new THREE.Vector3(0,-1,0);
+        //var rad = 500;
+
+        //particleSystem.addParticlesFromDisk(2, cen, nor, rad);
+        //particleSystem.updateParticles(dt, terrain);
+
+        flowLines.update(dt);
+
+        controls.update();
+
+        requestAnimationFrame(render);
+
+        stats.end();
+    }
+
+    function render() {
+        renderer.render( scene, camera );
+    }
+
+    function clickSaveTerrain() {
+
+        terrain.save("temp.json");
+
+    }
+
+    function clickSaveLine() {
+
+        flowLines.save("line.json");
+
+    }
+
+    function clickRefresh() {
+
+        flowLines.updateTerrain(terrain);
+
+    }
+
+    function changeMode() {
+
+    }
+
+    function clickMakeFlow() {
+
+        if(drawCount <= 0) return;
+
+        var positions = lineGeometry.attributes.position.array;
+        for(var n=0; n<drawCount; n++) {
+
+            var p = new THREE.Vector3(positions[n*3+0], positions[n*3+1], positions[n*3+2]);
+            flowLines.addLinePoint(p);
+        }
+
+        flowLines.generate();
+        flowLines.generateGeometry();
+
+        scene.add(flowLines.getMesh());
+
+        drawCount = 0;
+        lineGeometry.drawcalls.pop();
+        lineGeometry.addDrawCall(0,drawCount,0);
+    }
+
+</script>
+
+</body>
+</html>
