@@ -40,25 +40,33 @@
     var gui;
     var controls;
 
-
-    var min = new THREE.Vector3(-300.0, 0.0, -300.0);
-    var max = new THREE.Vector3( 300.0, 0.0,  300.0);
-
+    var isSnow = true;
 
     particleSystem = new ParticleSystem();
-    particleSystem.initialize(1000);
+    particleSystem.initialize(5000);
+
 
     particleSystem.setParameters(Examples.snowStorm);
-    particleSystem.setParameters({seedSize : 3.1});
-    particleSystem.setParameters({seedVelMag : 100.3});
-    particleSystem.setParameters({windStrength: 0.5});
-    particleSystem.setParameters({seedLife : 10});
+    particleSystem.setParameters({
+        seedSize : 4.0,
+        seedVelMag : 100.0,
+        windStrength: 3,
+        seedLife : 10,
+    });
 
 
     var terrain = new AdditiveTerrain();
 
-    var terrainParams = {terrainImage:"./textures/grass.jpg", decalImage:"./textures/snowflake.png", decalColor:0xffffff};
-    terrain.initialize(min, max, 1000, 1000, 100000, 0.5, terrainParams);
+    var min = new THREE.Vector3(-300.0, 0.0, -300.0);
+    var max = new THREE.Vector3( 300.0, 0.0,  300.0);
+
+    var terrainParams = {terrainImage:"./textures/rock.jpg",
+        terrainImage1:"./textures/grass.jpg",
+        decalImage:"./textures/snowflake.png",
+        decalColor:0xffffff,
+        load:'./models/dongsan.json'
+    };
+    terrain.initialize(min, max, 200, 200, 50000, 0.8, terrainParams);
 
 
     init();
@@ -83,9 +91,11 @@
         camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.01, 10000 );
         camera.setLens(18);
 
-        camera.position.y = 10;
-        //camera.position.x = -2;
+        // position and point the camera to the center of the scene
+        camera.position.x = 100;
+        camera.position.y = 50;
         camera.position.z = 50;
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
 
         scene = new THREE.Scene();
 
@@ -123,21 +133,9 @@
 
 
         controls = new THREE.OrbitControls(camera, renderer.domElement);
-/*
-        controls.rotateSpeed = 10.0;
-        controls.zoomSpeed = 5;
-        controls.panSpeed = 2;
-
-        controls.noZoom = false;
-        controls.noPan = false;
-
-        controls.staticMoving = true;
-        controls.dynamicDampingFactor = 0.3;
-*/
-        //
 
         window.addEventListener( 'resize', onWindowResize, false );
-
+        window.addEventListener( 'keydown', onKeyDown, false );
     }
 
     function onWindowResize() {
@@ -185,6 +183,60 @@
 
     function render() {
         renderer.render( scene, camera );
+    }
+
+    function onKeyDown(e) {
+        if(e.keyCode == "69"){
+
+            if(isSnow == true) {
+
+                terrain.clearDecals();
+
+                particleSystem.setParameters({
+                    seedVelDir: new THREE.Vector3(0.0,-1,0),
+                    seedVelMag: 50.0,
+                    globalForce: new THREE.Vector3(0, -0.1, 0),
+                    windStrength: 5.0,
+                    seedSize: 10,
+                    seedLife: 5.0,
+                    texFile: "./textures/leaf.png",
+                    particleColor: new THREE.Color(0Xaaaa00),
+                    angularVel : 0.005,
+                    alpha: 1.0,
+                    blendingType: THREE.NormalBlending
+                });
+
+                terrain.setParameters({
+                    decalImage:"./textures/leaf.png",
+                    decalColor: 0xffff00,
+                    decalSize : 1.5
+                });
+
+                isSnow = false;
+            }
+            else {
+
+                terrain.clearDecals();
+
+                particleSystem.setParameters(Examples.snowStorm);
+                particleSystem.setParameters({
+                    seedSize : 4.0,
+                    seedVelMag : 100.0,
+                    windStrength: 3,
+                    seedLife : 10,
+                    alpha: 1.0,
+                    blendingType: THREE.CustomBlending
+                });
+
+                terrain.setParameters({
+                    decalImage: "./textures/snowflake.png",
+                    decalColor: 0xffffff,
+                    decalSize : 0.8
+                });
+
+                isSnow = true;
+            }
+        }
     }
 
 </script>

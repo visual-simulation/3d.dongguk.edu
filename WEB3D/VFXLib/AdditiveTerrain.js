@@ -293,6 +293,22 @@ function AdditiveTerrain() {
         decalMesh = new THREE.Mesh(decalGeometry, decalMaterial);
     }
 
+    this.setParameters = function(params) {
+
+        if(params.decalColor != undefined) {
+            decalMaterial.color = new THREE.Color(params.decalColor);
+            decalMaterial.needsUpdate = true;
+        }
+        if(params.decalImage != undefined) {
+            decalMaterial.map = new THREE.ImageUtils.loadTexture(params.decalImage);
+            decalMaterial.needsUpdate = true;
+        }
+        if(params.decalSize != undefined) {
+            ptSize = params.decalSize;
+        }
+
+    }
+
     this.getHeight = function(x, z) {
 
         var i = parseInt((x-min.x)/dx);
@@ -494,5 +510,10 @@ function AdditiveTerrain() {
 
     this.clearDecals = function() {
         countNum = 0;
+        decalMesh.geometry.drawcalls.pop();
+        decalMesh.geometry.addDrawCall(0, countNum, 0);
+
+        decalPos.needsUpdate = true;
+        decalTex.needsUpdate = true;
     }
 }

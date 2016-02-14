@@ -166,6 +166,11 @@ function ParticleSystem() {
         if(params.useDecal != undefined) {
             useDecal = params.useDecal;
         }
+        if(params.blendingType != undefined) {
+            blendingType = params.blendingType;
+            pointMaterial.blending = blendingType;
+            pointMaterial.needsUpdate = true;
+        }
     }
 
     this.initialize = function(_total, params) {
@@ -429,8 +434,6 @@ function ParticleSystem() {
         sizeBuffer.needsUpdate     = true;
         rotationBuffer.needsUpdate = true;
 
-        //pointGeometry.computeBoundingBox();
-        //pointGeometry.computeBoundingSphere();
 
         pointMesh.geometry.drawcalls.pop();
         pointMesh.geometry.addDrawCall(0,tail+1,0);
