@@ -81,38 +81,39 @@ function AdditiveTerrain() {
 
         var data = undefined;
 
-        if(params.load == undefined) {
+        min = vMin.clone();
+        max = vMax.clone();
 
-            min = vMin.clone();
-            max = vMax.clone();
+        iRes = iSize;
+        jRes = jSize;
 
-            iRes = iSize;
-            jRes = jSize;
+        dx = (max.x - min.x) / iRes;
+        dz = (max.z - min.z) / jRes;
 
-            dx = (max.x - min.x) / iRes;
-            dz = (max.z - min.z) / jRes;
+        du = 0.1;
+        dv = 0.1;
 
-            du = 0.1;
-            dv = 0.1;
+        max = new THREE.Vector3(min.x+iRes*dx, max.y, min.z+jRes*dz);
 
-            max = new THREE.Vector3(min.x+iRes*dx, max.y, min.z+jRes*dz);
-        }
-        else {
+        if(params != undefined) {
 
-            var json = loadFileToString(params.load);
-            data = JSON.parse(json);
+            if(params.load != undefined) {
 
-            min = data.min;
-            max = data.max;
+                var json = loadFileToString(params.load);
+                data = JSON.parse(json);
 
-            iRes = data.iRes;
-            jRes = data.jRes;
+                min = data.min;
+                max = data.max;
 
-            dx = data.dx;
-            dz = data.dz;
+                iRes = data.iRes;
+                jRes = data.jRes;
 
-            du = data.du;
-            dv = data.dv;
+                dx = data.dx;
+                dz = data.dz;
+
+                du = data.du;
+                dv = data.dv;
+            }
         }
 
         ptSize = _ptSize;
