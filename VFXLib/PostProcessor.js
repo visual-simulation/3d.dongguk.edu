@@ -39,6 +39,14 @@ function PostProcessor() {
     var rainStops;
     var rainOptions;
     var PRIVATE_GRAVITY_FORCE_FACTOR_X;
+    var reflectionScaledownFactor = 5;
+    var reflectionDropMappingWidth = 200;
+    var reflectionDropMappingHeight = 200;
+    var reflected;
+    var width;
+    var height;
+    var img;
+    var crop;
 
     var ox;
     var oy;
@@ -68,10 +76,9 @@ function PostProcessor() {
             gravityAngleVariance: 0
         };
 
-
         PRIVATE_GRAVITY_FORCE_FACTOR_X = ((Math.PI / 2) - rainOptions.gravityAngle) * (rainOptions.fps * 0.001) / 50;
 
-        rainSeedSize = 5;
+        rainSeedSize = 10;
         rainSeedLife = 3;
 
         rainTotal = _total;
@@ -252,6 +259,171 @@ function PostProcessor() {
 
         _this.drawRain(number);
 
+    }
+
+    this.rainImage = function( _total, _img ) {
+
+        img = _img;
+        crop = [0, 0, img.naturalWidth, img.naturalHeight];
+
+        rainCanvas = canvas;
+        rainCanvas.width = window.innerWidth;
+        rainCanvas.height = window.innerHeight;
+
+        width = img.clientWidth;
+        height = img.clientHeight;
+
+        reflected = document.createElement('canvas');
+        reflected.width = rainCanvas.width / reflectionScaledownFactor;
+        reflected.height = rainCanvas.height / reflectionScaledownFactor;
+        var ctx = reflected.getContext('2d');
+        ctx.drawImage(img, crop[0], crop[1], crop[2], crop[3], 0, 0, reflected.width, reflected.height);
+
+        rainContext = rainCanvas.getContext('2d');
+
+        rainOptions = {
+            opacity: 0.1,
+            fps: 60,
+            gravityThreshold: 3,
+            gravityAngle: Math.PI / 2,
+            gravityAngleVariance: 0
+        };
+
+
+        PRIVATE_GRAVITY_FORCE_FACTOR_X = ((Math.PI / 2) - rainOptions.gravityAngle) * (rainOptions.fps * 0.001) / 50;
+
+        rainSeedSize = 5;
+        rainSeedLife = 3;
+
+        rainTotal = _total;
+        rainCount = 0;
+        rainTail = -1;
+
+        rainPositions = new Float32Array(rainTotal*2);
+        rainLives = new Float32Array(rainTotal * 1);
+        rainSizes = new Float32Array(rainTotal * 1);
+        rainColors = new Array(rainTotal * 1);
+        rainAlpha = new Float32Array(rainTotal * 1);
+        rainWidths = new Float32Array(rainTotal * 1);
+        rainHeights = new Float32Array(rainTotal * 1);
+        rainSpeeds = new Float32Array(rainTotal * 1);
+        rainStops = new Float32Array(rainTotal * 1);
+
+        return rainCanvas;
+    }
+
+    this.drawRainImage = function(number) {
+
+        rainContext.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
+
+
+        for(var i = 0; i < number; i++){
+
+            var idx = i*2;
+
+            rainContext.save();
+            rainContext.beginPath();
+
+            var orgR = rainSizes[i];
+            rainSizes[i] = 0.95 * rainSizes[i];
+            if(rainSizes[i] < 3) {
+                rainContext.arc(rainPositions[idx + 0], rainPositions[idx + 1], rainSizes[i], 0, Math.PI * 2, true);
+                rainContext.closePath();
+            }
+            else if(rainSpeeds[i] > 2){
+                var yr = 1 + 0.1 * rainSpeeds[i];
+                rainContext.moveTo(rainPositions[idx + 0] - rainSizes[i] / yr, rainPositions[idx + 1]);
+                rainContext.bezierCurveTo(rainPositions[idx + 0] - rainSizes[i], rainPositions[idx + 1] - rainSizes[i] * 2, rainPositions[idx + 0] + rainSizes[i], rainPositions[idx+1] - rainSizes[i] * 2, rainPositions[idx + 0] + rainSizes[i] / yr, rainPositions[idx + 1]);
+                rainContext.bezierCurveTo(rainPositions[idx + 0] + rainSizes[i], rainPositions[idx + 1] + yr * rainSizes[i], rainPositions[idx + 0] - rainSizes[i], rainPositions[idx+1] + yr * rainSizes[i], rainPositions[idx + 0] - rainSizes[i] / yr, rainPositions[idx + 1]);
+            }
+            else{
+                rainContext.arc(rainPositions[idx+0], rainPositions[idx+1], rainSizes[i] * 0.9, 0, Math.PI * 2, true);
+                rainContext.closePath();
+            }
+
+            rainContext.clip();
+
+            rainSizes[i] = orgR;
+
+            //reflection
+            var sx = Math.max((rainPositions[idx+0] - reflectionDropMappingWidth) / reflectionScaledownFactor, 0);
+            var sy = Math.max((rainPositions[idx+1] - reflectionDropMappingHeight) / reflectionScaledownFactor, 0);
+            var sw = _this.positiveMin(reflectionDropMappingWidth * 2 / reflectionScaledownFactor, reflected.width - sx);
+            var sh = _this.positiveMin(reflectionDropMappingHeight * 2 / reflectionScaledownFactor, reflected.height - sy);
+            var dx = Math.max(rainPositions[idx+0] - 1.1 * rainSizes[i], 0);
+            var dy = Math.max(rainPositions[idx+1] - 1.1 * rainSizes[i], 0);
+            rainContext.drawImage(reflected, sx, sy, sw, sh, dx, dy, rainSizes[i] * 2, rainSizes[i] * 2);
+
+
+            rainContext.restore();
+
+        }
+
+    }
+
+    this.updateRainImage = function(number) {
+
+        if(number > rainTotal)
+        {
+            number = rainTotal;
+        }
+        for(var i=0; i < number; i++) {
+
+            var idx = i*2;
+
+            if(rainLives[i] > 0){
+
+                if(rainStops[i] > 0){
+                    rainStops[i] -= 0.1;
+                }
+                else {
+                    if(rainSizes[i] > rainOptions.gravityThreshold){
+
+                        rainPositions[idx+1] += rainSpeeds[i];
+                        rainSpeeds[i] -= 0.05;
+                        if(rainSpeeds[i] < 0) {
+                            rainSpeeds[i] = 0.02 * Math.floor(rainSizes[i]*Math.random()*100);
+                        }
+                        rainPositions[idx] += PRIVATE_GRAVITY_FORCE_FACTOR_X * Math.floor(rainSizes[i]);
+                    }
+                    else{
+                        rainLives[i] -= 0.1;
+                    }
+                    if(rainPositions[idx+1] > parseFloat(rainCanvas.height)){
+                        rainLives[i] = -1;
+                        rainStops[i] = Math.random()*rainTotal/100;
+                    }
+                }
+
+            }
+            else{
+                _this.addRain(i, Math.random() * rainCanvas.width, Math.random() * rainCanvas.height);
+            }
+        }
+
+        _this.drawRainImage(number);
+
+    }
+
+    this.positiveMin = function(val1, val2) {
+        var result = 0;
+        if(val1 < val2) {
+            if(val1 <= 0) {
+                result = val2;
+            }
+            else {
+                result = val1;
+            }
+        }
+        else {
+            if(val2 <= 0) {
+                result = val1;
+            }
+            else {
+                result = val2;
+            }
+        }
+        return result <= 0 ? 1 : result;
     }
 
 
