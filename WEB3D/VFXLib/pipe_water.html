@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -65,293 +64,293 @@
 
 <body>
 
-    <div id="images" class="menu">
-        Captured Materials
-        <a id="img_0" href="#" onclick="onclickImg0()"><img src="textures/gradient.png" /></a>
-        <a id="img_1" href="#" onclick="onclickImg1()"><img src="textures/matcaps/blue.jpg" /></a>
-        <a id="img_2" href="#" onclick="onclickImg2()"><img src="textures/matcaps/permalink.jpg" /></a>
-        <a id="img_3" href="#" onclick="onclickImg3()"><img src="textures/matcaps/rough-aluminium.jpg" /></a>
-        <a id="img_4" href="#" onclick="onclickImg4()"><img src="textures/matcaps/fireball.jpg" /></a>
-        <a id="img_5" href="#" onclick="onclickImg5()"><img src="textures/matcaps/red.jpg" /></a>
-        <a id="img_6" href="#" onclick="onclickImg6()"><img src="textures/matcaps/green.jpg" /></a>
-        <a id="img_7" href="#" onclick="onclickImg7()"><img src="textures/matcaps/emerald.jpg" /></a>
-    </div>
+<div id="images" class="menu">
+    Captured Materials
+    <a id="img_0" href="#" onclick="onclickImg0()"><img src="textures/gradient.png" /></a>
+    <a id="img_1" href="#" onclick="onclickImg1()"><img src="textures/matcaps/blue.jpg" /></a>
+    <a id="img_2" href="#" onclick="onclickImg2()"><img src="textures/matcaps/permalink.jpg" /></a>
+    <a id="img_3" href="#" onclick="onclickImg3()"><img src="textures/matcaps/rough-aluminium.jpg" /></a>
+    <a id="img_4" href="#" onclick="onclickImg4()"><img src="textures/matcaps/fireball.jpg" /></a>
+    <a id="img_5" href="#" onclick="onclickImg5()"><img src="textures/matcaps/red.jpg" /></a>
+    <a id="img_6" href="#" onclick="onclickImg6()"><img src="textures/matcaps/green.jpg" /></a>
+    <a id="img_7" href="#" onclick="onclickImg7()"><img src="textures/matcaps/emerald.jpg" /></a>
+</div>
 
-    <script>
+<script>
 
-        if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+    if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
-        var container, stats;
-        var camera, cameraTarget, scene, renderer;
+    var container, stats;
+    var camera, cameraTarget, scene, renderer;
 
-        var ps;
-        var fog = new THREE.Fog( 0x72645b, 2, 15 );
+    var ps;
+    var fog = new THREE.Fog( 0x72645b, 2, 15 );
 
-        var highRendered = true;
+    var highRendered = true;
 
-        function onclickImg0() {
-            scene.add(ps.getMesh());
-            scene.remove(ps.getScreenMesh());
-        }
-        function onclickImg1() {
-            ps.setParameters({ matcapFile: "./textures/matcaps/blue.jpg" });
-            scene.remove(ps.getMesh());
-            scene.add(ps.getScreenMesh());
-        }
-        function onclickImg2() {
-            ps.setParameters({ matcapFile: "./textures/matcaps/permalink.jpg" });
-            scene.remove(ps.getMesh());
-            scene.add(ps.getScreenMesh());
-        }
-        function onclickImg3() {
-            ps.setParameters({ matcapFile: "./textures/matcaps/rough-aluminium.jpg" });
-            scene.remove(ps.getMesh());
-            scene.add(ps.getScreenMesh());
-        }
-        function onclickImg4() {
-            ps.setParameters({ matcapFile: "./textures/matcaps/fireball.jpg" });
-            scene.remove(ps.getMesh());
-            scene.add(ps.getScreenMesh());
-        }
-        function onclickImg5() {
-            ps.setParameters({ matcapFile: "./textures/matcaps/red.jpg" });
-            scene.remove(ps.getMesh());
-            scene.add(ps.getScreenMesh());
-        }
-        function onclickImg6() {
-            ps.setParameters({ matcapFile: "./textures/matcaps/green.jpg" });
-            scene.remove(ps.getMesh());
-            scene.add(ps.getScreenMesh());
-        }
-        function onclickImg7() {
-            ps.setParameters({ matcapFile: "./textures/matcaps/emerald.jpg" });
-            scene.remove(ps.getMesh());
-            scene.add(ps.getScreenMesh());
-        }
+    function onclickImg0() {
+        scene.add(ps.getMesh());
+        scene.remove(ps.getScreenMesh());
+    }
+    function onclickImg1() {
+        ps.setParameters({ matcapFile: "./textures/matcaps/blue.jpg" });
+        scene.remove(ps.getMesh());
+        scene.add(ps.getScreenMesh());
+    }
+    function onclickImg2() {
+        ps.setParameters({ matcapFile: "./textures/matcaps/permalink.jpg" });
+        scene.remove(ps.getMesh());
+        scene.add(ps.getScreenMesh());
+    }
+    function onclickImg3() {
+        ps.setParameters({ matcapFile: "./textures/matcaps/rough-aluminium.jpg" });
+        scene.remove(ps.getMesh());
+        scene.add(ps.getScreenMesh());
+    }
+    function onclickImg4() {
+        ps.setParameters({ matcapFile: "./textures/matcaps/fireball.jpg" });
+        scene.remove(ps.getMesh());
+        scene.add(ps.getScreenMesh());
+    }
+    function onclickImg5() {
+        ps.setParameters({ matcapFile: "./textures/matcaps/red.jpg" });
+        scene.remove(ps.getMesh());
+        scene.add(ps.getScreenMesh());
+    }
+    function onclickImg6() {
+        ps.setParameters({ matcapFile: "./textures/matcaps/green.jpg" });
+        scene.remove(ps.getMesh());
+        scene.add(ps.getScreenMesh());
+    }
+    function onclickImg7() {
+        ps.setParameters({ matcapFile: "./textures/matcaps/emerald.jpg" });
+        scene.remove(ps.getMesh());
+        scene.add(ps.getScreenMesh());
+    }
 
-        init();
-        loop();
+    init();
+    loop();
 
-        function init() {
+    function init() {
 
-            container = document.createElement( 'div' );
-            document.body.appendChild( container );
+        container = document.createElement( 'div' );
+        document.body.appendChild( container );
 
-            camera = new THREE.PerspectiveCamera( 35, window.innerWidth / window.innerHeight, 1, 100 );
+        camera = new THREE.PerspectiveCamera( 35, window.innerWidth / window.innerHeight, 1, 100 );
 
-            camera.position.y = 0.8;
-            camera.position.x = 2.2;
-            camera.position.z = 3;
+        camera.position.y = 0.8;
+        camera.position.x = 2.2;
+        camera.position.z = 3;
 
-            controls = new THREE.OrbitControls(camera);
+        controls = new THREE.OrbitControls(camera);
 
-            controls.rotateSpeed = 0.3;
+        controls.rotateSpeed = 0.3;
 
-            controls.noZoom = false;
-            controls.noPan = true;
+        controls.noZoom = false;
+        controls.noPan = true;
 
-            controls.staticMoving = true;
-            controls.dynamicDampingFactor = 0.3;
+        controls.staticMoving = true;
+        controls.dynamicDampingFactor = 0.3;
 
-            controls.minPolarAngle = 0;
-            controls.maxPolarAngle = Math.PI;
+        controls.minPolarAngle = 0;
+        controls.maxPolarAngle = Math.PI;
 
-            controls.minAzimuthAngle = -Math.PI*0.4;
-            controls.maxAzimuthAngle =  Math.PI*0.4;
+        controls.minAzimuthAngle = -Math.PI*0.4;
+        controls.maxAzimuthAngle =  Math.PI*0.4;
 
-            scene = new THREE.Scene();
-            scene.fog = fog;
+        scene = new THREE.Scene();
+        scene.fog = fog;
 
-            // initialize particle system;
-            ps = new ParticleSystem();
-            ps.initialize(10000);
+        // initialize particle system;
+        ps = new ParticleSystem();
+        ps.initialize(10000);
 
-            ps.setParameters({seedVelDir: new THREE.Vector3(0,0,1),
-                              seedVelMag: 2.0,
-                              globalForce: new THREE.Vector3(0, -10,0),
-                              windStrength: 0.05,
-                              seedSize: 0.6,
-                              seedLife: 2.0,
-                              texFile : "./textures/gradient.png",
-                              matcapFile: "./textures/matcaps/blue.jpg",
-                              particleColor: new THREE.Color(0.1, 0.1, 1.0),
-                              alpha : 0.7
+        ps.setParameters({seedVelDir: new THREE.Vector3(0,0,1),
+            seedVelMag: 2.0,
+            globalForce: new THREE.Vector3(0, -10,0),
+            windStrength: 0.05,
+            seedSize: 0.6,
+            seedLife: 2.0,
+            texFile : "./textures/gradient.png",
+            matcapFile: "./textures/matcaps/blue.jpg",
+            particleColor: new THREE.Color(0.1, 0.1, 1.0),
+            alpha : 0.7
+        });
+
+        // Ground
+        var plane = new THREE.Mesh(
+                new THREE.PlaneBufferGeometry( 40, 40 ),
+                new THREE.MeshPhongMaterial( { color: 0x555555, specular: 0x000000 } )
+        );
+        plane.rotation.x = -Math.PI/2;
+        plane.position.y = -0.55;
+        plane.receiveShadow = true;
+
+        scene.add( plane );
+
+
+        var sphereMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.2,100,100),
+                new THREE.MeshPhongMaterial( { color: 0x111111, specular: 0x111111, shininess: 100 } )
+        );
+
+        sphereMesh.receiveShadow = true;
+        sphereMesh.castShadow = true;
+        sphereMesh.position.set(-0.57,-0.4,0.9);
+
+        scene.add( sphereMesh );
+
+
+        // Loader
+        var loader = new THREE.OBJLoader();
+        loader.load('./models/pipe.obj', function(object){
+
+            var material = new THREE.MeshPhongMaterial( { color: 0x111111, specular: 0x111111, shininess: 30 });
+            material.side = THREE.DoubleSide;
+
+            object.traverse( function ( child ) {
+
+                if ( child instanceof THREE.Mesh ) {
+
+                    child.material = material;
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
             });
 
-            // Ground
-            var plane = new THREE.Mesh(
-                    new THREE.PlaneBufferGeometry( 40, 40 ),
-                    new THREE.MeshPhongMaterial( { color: 0x555555, specular: 0x000000 } )
-            );
-            plane.rotation.x = -Math.PI/2;
-            plane.position.y = -0.55;
-            plane.receiveShadow = true;
+            object.position.y = -0.5;
+            object.scale.set(0.02, 0.02, 0.02);
+            object.rotation.x = -Math.PI*0.5;
 
-            scene.add( plane );
+            scene.add(object);
+        });
 
+        //scene.add(ps.getMesh());
+        scene.add(ps.getScreenMesh());
 
-            var sphereMesh = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.2,100,100),
-                    new THREE.MeshPhongMaterial( { color: 0x111111, specular: 0x111111, shininess: 100 } )
-            );
+        //
+        var objectField = new ObjectField();
+        objectField.initialize();
 
-            sphereMesh.receiveShadow = true;
-            sphereMesh.castShadow = true;
-            sphereMesh.position.set(-0.57,-0.4,0.9);
+        var planeObject = new PlaneObject();
+        planeObject.initialize(new THREE.Vector3(0,-0.5,0), new THREE.Vector3(0,1,0));
+        planeObject.setParameters(0.3, 0.8);
 
-            scene.add( sphereMesh );
+        objectField.addObstacle(planeObject);
 
 
-            // Loader
-            var loader = new THREE.OBJLoader();
-            loader.load('./models/pipe.obj', function(object){
-
-                var material = new THREE.MeshPhongMaterial( { color: 0x111111, specular: 0x111111, shininess: 30 });
-                material.side = THREE.DoubleSide;
-
-                object.traverse( function ( child ) {
-
-                    if ( child instanceof THREE.Mesh ) {
-
-                        child.material = material;
-                        child.castShadow = true;
-                        child.receiveShadow = true;
-                    }
-                });
-
-                object.position.y = -0.5;
-                object.scale.set(0.02, 0.02, 0.02);
-                object.rotation.x = -Math.PI*0.5;
-
-                scene.add(object);
-            });
-
-            //scene.add(ps.getMesh());
-            scene.add(ps.getScreenMesh());
-
-            //
-            var objectField = new ObjectField();
-            objectField.initialize();
-
-            var planeObject = new PlaneObject();
-            planeObject.initialize(new THREE.Vector3(0,-0.5,0), new THREE.Vector3(0,1,0));
-            planeObject.setParameters(0.3, 0.8);
-
-            objectField.addObstacle(planeObject);
+        var sphereObject = new SphereObject();
+        sphereObject.initialize(new THREE.Vector3(-0.57,-0.4,0.9), 0.2);
+        sphereObject.setParameters(0.3, 0.8);
 
 
-            var sphereObject = new SphereObject();
-            sphereObject.initialize(new THREE.Vector3(-0.57,-0.4,0.9), 0.2);
-            sphereObject.setParameters(0.3, 0.8);
+        objectField.addObstacle(sphereObject);
 
 
-            objectField.addObstacle(sphereObject);
+        ps.setObstacleField(objectField);
+
+        // Lights
+
+        scene.add( new THREE.AmbientLight( 0x777777 ) );
+
+        addShadowedLight( 1, 1, 1, 0xffffff, 1.35 );
+        addShadowedLight( 0.5, 1, -1, 0xffaa00, 1 );
+
+        // renderer
+
+        renderer = new THREE.WebGLRenderer( { antialias: true, alpha:true } );
+        renderer.setClearColor( fog.color, 0.0 );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+        renderer.gammaInput = true;
+        renderer.gammaOutput = true;
+        renderer.shadowMapEnabled = true;
+        renderer.shadowMapCullFace = THREE.CullFaceBack;
+
+        container.appendChild( renderer.domElement );
+
+        // stats
+
+        stats = new Stats();
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.top = '0px';
+        container.appendChild( stats.domElement );
+
+        // resize
+
+        window.addEventListener( 'resize', onWindowResize, false );
+    }
+
+    function addShadowedLight( x, y, z, color, intensity ) {
+
+        var directionalLight = new THREE.DirectionalLight( color, intensity );
+        directionalLight.position.set( x, y, z )
+        scene.add( directionalLight );
+
+        directionalLight.castShadow = true;
+        // directionalLight.shadowCameraVisible = true;
+
+        var d = 1;
+        directionalLight.shadowCameraLeft = -d;
+        directionalLight.shadowCameraRight = d;
+        directionalLight.shadowCameraTop = d;
+        directionalLight.shadowCameraBottom = -d;
+
+        directionalLight.shadowCameraNear = 1;
+        directionalLight.shadowCameraFar = 4;
+
+        directionalLight.shadowMapWidth = 1024;
+        directionalLight.shadowMapHeight = 1024;
+
+        directionalLight.shadowBias = -0.005;
+        directionalLight.shadowDarkness = 0.15;
+
+    }
+
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+    }
+
+    var fps = 40;
+    var time;
+    function loop() {
+
+        setTimeout(loop, 1000/fps);
+
+        var now = new Date().getTime();
+        var dt = (now - (time||now))/1000;
+        time = now;
 
 
-            ps.setObstacleField(objectField);
+        stats.begin();
 
-            // Lights
+        var cen = new THREE.Vector3(-0.57,0.24,0.24);
+        var rad = 0.11;
 
-            scene.add( new THREE.AmbientLight( 0x777777 ) );
+        ps.addParticlesFromSphere(50, cen, rad);
+        ps.updateParticles(dt);
+        controls.update();
 
-            addShadowedLight( 1, 1, 1, 0xffffff, 1.35 );
-            addShadowedLight( 0.5, 1, -1, 0xffaa00, 1 );
+        requestAnimationFrame(render);
 
-            // renderer
+        stats.end();
+    }
 
-            renderer = new THREE.WebGLRenderer( { antialias: true, alpha:true } );
-            renderer.setClearColor( fog.color, 0.0 );
-            renderer.setSize( window.innerWidth, window.innerHeight );
+    function render() {
 
-            renderer.gammaInput = true;
-            renderer.gammaOutput = true;
-            renderer.shadowMapEnabled = true;
-            renderer.shadowMapCullFace = THREE.CullFaceBack;
+        renderer.setClearColor( fog.color, 0.0 );
+        ps.updateTexture(renderer, scene, camera);
 
-            container.appendChild( renderer.domElement );
+        renderer.setClearColor( fog.color, 1.0 );
+        renderer.render(scene, camera);
 
-            // stats
+    }
 
-            stats = new Stats();
-            stats.domElement.style.position = 'absolute';
-            stats.domElement.style.top = '0px';
-            container.appendChild( stats.domElement );
-
-            // resize
-
-            window.addEventListener( 'resize', onWindowResize, false );
-        }
-
-        function addShadowedLight( x, y, z, color, intensity ) {
-
-            var directionalLight = new THREE.DirectionalLight( color, intensity );
-            directionalLight.position.set( x, y, z )
-            scene.add( directionalLight );
-
-            directionalLight.castShadow = true;
-            // directionalLight.shadowCameraVisible = true;
-
-            var d = 1;
-            directionalLight.shadowCameraLeft = -d;
-            directionalLight.shadowCameraRight = d;
-            directionalLight.shadowCameraTop = d;
-            directionalLight.shadowCameraBottom = -d;
-
-            directionalLight.shadowCameraNear = 1;
-            directionalLight.shadowCameraFar = 4;
-
-            directionalLight.shadowMapWidth = 1024;
-            directionalLight.shadowMapHeight = 1024;
-
-            directionalLight.shadowBias = -0.005;
-            directionalLight.shadowDarkness = 0.15;
-
-        }
-
-        function onWindowResize() {
-
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-
-            renderer.setSize( window.innerWidth, window.innerHeight );
-
-        }
-
-        var fps = 40;
-        var time;
-        function loop() {
-
-            setTimeout(loop, 1000/fps);
-
-            var now = new Date().getTime();
-            var dt = (now - (time||now))/1000;
-            time = now;
-
-
-            stats.begin();
-
-            var cen = new THREE.Vector3(-0.57,0.24,0.24);
-            var rad = 0.11;
-
-            ps.addParticlesFromSphere(50, cen, rad);
-            ps.updateParticles(dt);
-            controls.update();
-
-            requestAnimationFrame(render);
-
-            stats.end();
-        }
-
-        function render() {
-
-            renderer.setClearColor( fog.color, 0.0 );
-            ps.updateTexture(renderer, scene, camera);
-
-            renderer.setClearColor( fog.color, 1.0 );
-            renderer.render(scene, camera);
-
-        }
-
-    </script>
+</script>
 
 </body>
