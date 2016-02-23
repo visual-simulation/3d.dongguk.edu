@@ -339,7 +339,12 @@
 
         if(frameTime >= 1.0) {
 
-            logs.push(frames);
+            var d = new Date();
+
+            var dString = d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + ' ';
+            dString += d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() + ' ';
+
+            logs.push({date:dString, frame:frames});
 
             frameTime -= 1.0;
             frames = 0;
@@ -392,8 +397,10 @@
 
         for(var n=0; n<logs.length; n++) {
 
-            var perf = 1.0/logs[n] * 1000;
-            data += n.toString() + 'sec : ' + logs[n].toString() + 'fps, ' + perf.toString() + 'ms' + '\r\n';
+            var perf = 1.0/logs[n].frame * 1000;
+
+            data += logs[n].date + ' ';
+            data += n.toString() + 'sec : ' + logs[n].frame.toString() + 'fps, ' + perf.toString() + 'ms' + '\r\n';
         }
 
         var blob = new Blob([data], {type: "text/plain"});
