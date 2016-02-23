@@ -28,6 +28,8 @@
 
 <body>
 
+<input type="button" value="Log file" onclick="clickLogs()">
+
 <div id="Stats-output">
 </div>
 <!-- Div which will hold the Output -->
@@ -108,6 +110,18 @@
 <!-- Javascript code that runs our Three.js examples -->
 <script type="text/javascript">
 
+
+    var minYArray    = [];
+    var maxYArray    = [];
+    var scaleArray   = [];
+    var rotateArray  = [];
+    var velArray     = [];
+
+    var aniTypeArray = [];
+    var aniMeshArray = [];
+
+
+
     var particleSystem = new ParticleSystem();
     particleSystem.initialize(10000);
 
@@ -124,6 +138,13 @@
 
     var min = new THREE.Vector3(-300.0, 0.0, -300.0);
     var max = new THREE.Vector3( 300.0, 0.0,  300.0);
+
+
+    var frameTime = 0.0;
+    var frames = 0;
+    var logs = [];
+
+
 
     var terrainParams = {terrainImage:"./textures/rock.jpg",
         terrainImage1:"./textures/grass.jpg",
@@ -288,38 +309,67 @@
                 arraymin[i]=bbox.box.min;
 
 
+
+                //
+
+                var type = 0;
+                var rad = Math.random();
+                if(rad <= 0.333) {
+                    type = 0;
+                    velArray[i] = 5.0;
+                }
+                else if(rad <= 0.666) {
+                    type = 1;
+                    velArray[i] = 5.0;
+                }
+                else {
+                    type = 2;
+                    velArray[i] = 20.0;
+                }
+
+                aniTypeArray[i] = type;
+                minYArray[i]    = newPos.y + height;
+                maxYArray[i]    = minYArray[i] + 50.0;
+                scaleArray[i]   = 60.0;
+                rotateArray[i]  = mesh.rotation.y;
+                aniMeshArray[i] = mesh;
+
+
             }, './models/');
             })(i,s);
-       }
-      /*  var controls = new function () {
-            this.num = s;
-        };
-        var gui = new dat.GUI();
-        gui.add(controls, 'num', 0, 50);*/
-
-
-
+        }
 
         render();
-        var time;
+
+
 
         function render() {
-            stats.update();
-
 
             var delta = clock.getDelta();
-            orbitControls.update(delta);
+            var dt = delta;
 
-            var now = new Date().getTime();
-            var dt = (now - (time||now))/1000;
-            time = now;
+            if(frameTime >= 1.0) {
+
+                logs.push(frames);
+
+                frameTime -= 1.0;
+                frames = 0;
+            }
+
+            frameTime += dt;
+            frames += 1;
+
+
+
+            stats.update(delta);
+            orbitControls.update(delta);
 
             var cen = new THREE.Vector3(0,300,0);
             var nor = new THREE.Vector3(0,-1,0);
             var rad = 300;
 
             particleSystem.addParticlesFromDisk(20, cen, nor, rad);
-            particleSystem.updateParticles(dt, terrain);
+            particleSystem.updateParticles(delta, terrain);
 
 
             var count = particleSystem.getCount();
@@ -349,8 +399,54 @@
 
             }
 
+            for(var n=0; n<material_shh.length; n++) {
+
+                var mesh = aniMeshArray[n];
+                var type = aniTypeArray[n];
+
+                if(type == 0) {
+                    // rotate
+                    rotateArray[n] += velArray[n] * dt;
+                    mesh.rotation.y = rotateArray[n];
+                }
+                else if(type == 1) {
+                    // scale
+                    var s = mesh.scale.x;
+                    mesh.scale.x += velArray[n] * dt;
+                    mesh.scale.y += velArray[n] * dt;
+                    mesh.scale.z += velArray[n] * dt;
+
+                    if(s > scaleArray[n]) {
+
+                        mesh.scale.set(scaleArray[n], scaleArray[n], scaleArray[n]);
+                        velArray[n] = velArray[n] * -1.0;
+                    }
+                    if(s < 20.0) {
+
+                        mesh.scale.set(20.0, 20.0, 20.0);
+                        velArray[n] = velArray[n] * -1.0;
+                    }
+                }
+                else {
+                    // translate
+                    var y = mesh.position.y;
+                    mesh.position.y += velArray[n] * dt;
+
+                    if(y > maxYArray[n]) {
+                        mesh.position.y = maxYArray[n]
+                        velArray[n] = velArray[n] * -1.0;
+                    }
+                    if(y < minYArray[n]) {
+                        mesh.position.y = minYArray[n]
+                        velArray[n] = velArray[n] * -1.0;
+                    }
+
+                }
+            }
+
             THREE.AnimationHandler.update(dt);
             requestAnimationFrame(render);
+
             // render using requestAnimationFrame
             webGLRenderer.render(scene, camera);
         }
@@ -373,7 +469,7 @@
             // Align top-left
             stats.domElement.style.position = 'absolute';
             stats.domElement.style.left = '0px';
-            stats.domElement.style.top = '0px';
+            stats.domElement.style.top = '30px';
 
             document.getElementById("Stats-output").appendChild(stats.domElement);
 
@@ -381,6 +477,26 @@
         }
 
         window.addEventListener( 'resize', onWindowResize, false );
+    }
+
+    function clickLogs() {
+
+        var data = '====== FPS Logs ===== \r\n';
+
+        for(var n=0; n<logs.length; n++) {
+
+            var perf = 1.0/logs[n] * 1000;
+            data += n.toString() + 'sec : ' + logs[n].toString() + 'fps, ' + perf.toString() + 'ms' + '\r\n';
+        }
+
+        var blob = new Blob([data], {type: "text/plain"});
+        var url  = URL.createObjectURL(blob);
+
+        var a = document.createElement('a');
+        a.download = 'log.txt';
+        a.href = url;
+
+        a.click();
     }
 
 

@@ -151,6 +151,8 @@
     //
     var fps = 40;
     var time;
+    var prevTime = Date.now();
+
     function loop() {
 
         setTimeout(loop, 1000/fps);
@@ -194,7 +196,7 @@
     var radius = 600;
     var theta = 0;
 
-    var prevTime = Date.now();
+
 
     function render() {
 
@@ -208,14 +210,17 @@
 
             var time = Date.now();
 
-            animation.update( time - prevTime );
+        //animation.update( time - prevTime );
+        //animation.update(aaa);
 
-            prevTime = time;
+        //aaa += 0.1;
 
-        }
+        prevTime = time;
 
-        renderer.render( scene, camera );
-        controls.update();
+    }
+
+    renderer.render( scene, camera );
+    controls.update();
 
     }
 
