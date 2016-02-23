@@ -39,10 +39,10 @@
         }
 
         .menu { color: #fff; font-weight: bold; font-size: 12px; z-index: 100; width: 75px; position: absolute; top: 0px; padding: 16px; }
-        .menu img, .menu canvas { width: 100px; margin: 10px 0 }
+        .menu img, .menu canvas { width: 75px; margin: 10px 0 }
 
         #images { background: rgba(0,0,0,0); right: 100px; }
-        #backgrounds { background: rgba(0,0,0,0.0); right: 220px; }
+        #backgrounds { background: rgba(0,0,0,0.0); left: 107px; }
         #labels { background: rgba(0,0,0,0.75); left: 214px; width: 100px }
 
         .lbl { color: #fff; z-index: 150; float:left; padding: 0.25em; width: 75px; display: block  }
@@ -67,28 +67,15 @@
 <input type="button" value="Log file" onclick="clickLogs()">
 
 <div id="images" class="menu">
-
+    Captured Materials
     <a id="img_0" href="#" onclick="onclickImg0()"><img src="textures/gradient.png" /></a>
-    Sprite
     <a id="img_1" href="#" onclick="onclickImg1()"><img src="textures/matcaps/blue.jpg" /></a>
-    Plastic Blue
     <a id="img_2" href="#" onclick="onclickImg2()"><img src="textures/matcaps/permalink.jpg" /></a>
-    Skin
     <a id="img_3" href="#" onclick="onclickImg3()"><img src="textures/matcaps/rough-aluminium.jpg" /></a>
-    Metal
-
-</div>
-
-<div id="backgrounds" class="menu">
-
     <a id="img_4" href="#" onclick="onclickImg4()"><img src="textures/matcaps/fireball.jpg" /></a>
-    Magma
     <a id="img_5" href="#" onclick="onclickImg5()"><img src="textures/matcaps/red.jpg" /></a>
-    Plastic Red
     <a id="img_6" href="#" onclick="onclickImg6()"><img src="textures/matcaps/green.jpg" /></a>
-    Green Gel
     <a id="img_7" href="#" onclick="onclickImg7()"><img src="textures/matcaps/emerald.jpg" /></a>
-    Emerald
 </div>
 
 <script>
@@ -103,79 +90,65 @@
 
     var highRendered = true;
 
+
     var frameTime = 0.0;
     var frames = 0;
     var logs = [];
-
     var clock = new THREE.Clock();
 
 
+    var sphereObject = new SphereObject();
+    var sphereMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(0.2,100,100),
+            new THREE.MeshPhongMaterial( { color: 0x111111, specular: 0x111111, shininess: 100 } )
+    );
+
+    var currPos  = new THREE.Vector3(-0.57,-0.5,0.9);
+
+    var startPos = new THREE.Vector3(-0.57,-0.6,0.9);
+    var endPos   = new THREE.Vector3(-0.57, 0.5,0.9);
+
+    var sVel = 0.2;
+
+
     function onclickImg0() {
-        highRendered = false;
         scene.add(ps.getMesh());
         scene.remove(ps.getScreenMesh());
     }
     function onclickImg1() {
-        highRendered = true;
         ps.setParameters({ matcapFile: "./textures/matcaps/blue.jpg" });
         scene.remove(ps.getMesh());
         scene.add(ps.getScreenMesh());
     }
     function onclickImg2() {
-        highRendered = true;
         ps.setParameters({ matcapFile: "./textures/matcaps/permalink.jpg" });
         scene.remove(ps.getMesh());
         scene.add(ps.getScreenMesh());
     }
     function onclickImg3() {
-        highRendered = true;
         ps.setParameters({ matcapFile: "./textures/matcaps/rough-aluminium.jpg" });
         scene.remove(ps.getMesh());
         scene.add(ps.getScreenMesh());
     }
     function onclickImg4() {
-        highRendered = true;
         ps.setParameters({ matcapFile: "./textures/matcaps/fireball.jpg" });
         scene.remove(ps.getMesh());
         scene.add(ps.getScreenMesh());
     }
     function onclickImg5() {
-        highRendered = true;
         ps.setParameters({ matcapFile: "./textures/matcaps/red.jpg" });
         scene.remove(ps.getMesh());
         scene.add(ps.getScreenMesh());
     }
     function onclickImg6() {
-        highRendered = true;
         ps.setParameters({ matcapFile: "./textures/matcaps/green.jpg" });
         scene.remove(ps.getMesh());
         scene.add(ps.getScreenMesh());
     }
     function onclickImg7() {
-        highRendered = true;
         ps.setParameters({ matcapFile: "./textures/matcaps/emerald.jpg" });
         scene.remove(ps.getMesh());
         scene.add(ps.getScreenMesh());
-    }
-
-    function clickLogs() {
-
-        var data = '====== FPS Logs ===== \r\n';
-
-        for(var n=0; n<logs.length; n++) {
-
-            var perf = 1.0/logs[n] * 1000;
-            data += n.toString() + 'sec : ' + logs[n].toString() + 'fps, ' + perf.toString() + 'ms' + '\r\n';
-        }
-
-        var blob = new Blob([data], {type: "text/plain"});
-        var url  = URL.createObjectURL(blob);
-
-        var a = document.createElement('a');
-        a.download = 'log.txt';
-        a.href = url;
-
-        a.click();
     }
 
     init();
@@ -222,7 +195,7 @@
             seedSize: 0.6,
             seedLife: 2.0,
             texFile : "./textures/gradient.png",
-            matcapFile: "./textures/matcaps/blue.jpg",
+            matcapFile: "./textures/matcaps/green.jpg",
             particleColor: new THREE.Color(0.1, 0.1, 1.0),
             alpha : 0.7
         });
@@ -238,11 +211,6 @@
 
         scene.add( plane );
 
-
-        var sphereMesh = new THREE.Mesh(
-                new THREE.SphereGeometry(0.2,100,100),
-                new THREE.MeshPhongMaterial( { color: 0x111111, specular: 0x111111, shininess: 100 } )
-        );
 
         sphereMesh.receiveShadow = true;
         sphereMesh.castShadow = true;
@@ -289,8 +257,7 @@
         objectField.addObstacle(planeObject);
 
 
-        var sphereObject = new SphereObject();
-        sphereObject.initialize(new THREE.Vector3(-0.57,-0.4,0.9), 0.2);
+        sphereObject.initialize(startPos, 0.2);
         sphereObject.setParameters(0.3, 0.8);
 
 
@@ -368,8 +335,7 @@
 
     function loop() {
 
-        var delta = clock.getDelta();
-        var dt = delta;
+        var dt = clock.getDelta();
 
         if(frameTime >= 1.0) {
 
@@ -382,7 +348,20 @@
         frameTime += dt;
         frames += 1;
 
+
         stats.update(dt);
+
+        var dev = sVel * dt;
+        currPos.y += dev;
+
+        if(startPos.y > currPos.y || endPos.y < currPos.y) {
+            sVel *= -1.0;
+        }
+
+        sphereMesh.position.x = currPos.x;
+        sphereMesh.position.y = currPos.y;
+        sphereMesh.position.z = currPos.z;
+        sphereObject.initialize(currPos, 0.2);
 
 
         var cen = new THREE.Vector3(-0.57,0.24,0.24);
@@ -399,15 +378,32 @@
 
     function render() {
 
-        if(highRendered == true) {
-
-            renderer.setClearColor( fog.color, 0.0 );
-            ps.updateTexture(renderer, scene, camera);
-
-        }
+        renderer.setClearColor( fog.color, 0.0 );
+        ps.updateTexture(renderer, scene, camera);
 
         renderer.setClearColor( fog.color, 1.0 );
         renderer.render(scene, camera);
+
+    }
+
+    function clickLogs() {
+
+        var data = '====== FPS Logs ===== \r\n';
+
+        for(var n=0; n<logs.length; n++) {
+
+            var perf = 1.0/logs[n] * 1000;
+            data += n.toString() + 'sec : ' + logs[n].toString() + 'fps, ' + perf.toString() + 'ms' + '\r\n';
+        }
+
+        var blob = new Blob([data], {type: "text/plain"});
+        var url  = URL.createObjectURL(blob);
+
+        var a = document.createElement('a');
+        a.download = 'log.txt';
+        a.href = url;
+
+        a.click();
     }
 
 </script>

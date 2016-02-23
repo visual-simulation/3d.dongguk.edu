@@ -27,8 +27,9 @@
 <script src="./AdditiveTerrain.js"></script>
 <script src="./FlowLines.js"></script>
 
-
+<input type="button" value="Log file" onclick="clickLogs()">
 <input type="button" value="Save Terrain" onclick="clickSaveTerrain()">
+<input type="button" value="Load Terrain" onclick="clickLoadTerrain()">
 <input type="button" value="Save Line" onclick="clickSaveLine()">
 <input type="button" value="Refresh" onclick="clickRefresh()">
 <select id="mode" onchange="changeMode()">
@@ -41,6 +42,13 @@
 
 
 <script>
+
+    var clock = new THREE.Clock();
+
+    var frameTime = 0.0;
+    var frames = 0;
+    var logs = [];
+
 
     var container, stats;
     var camera, scene, projector, renderer;
@@ -327,38 +335,31 @@
         renderer.setSize( window.innerWidth, window.innerHeight );
     }
 
-    //
-    var fps = 40;
-    var time;
-    var accTime = 0.0;
-
     function loop() {
 
-        setTimeout(loop, 1000/fps);
+        var delta = clock.getDelta();
+        var dt = delta;
 
-        var now = new Date().getTime();
-        var dt = (now - (time||now))/1000;
-        time = now;
+        if(frameTime >= 1.0) {
 
-        accTime += dt;
+            logs.push(frames);
 
-        stats.begin();
+            frameTime -= 1.0;
+            frames = 0;
+        }
 
+        frameTime += dt;
+        frames += 1;
 
-        //var cen = new THREE.Vector3(0,500,0);
-        //var nor = new THREE.Vector3(0,-1,0);
-        //var rad = 500;
-
-        //particleSystem.addParticlesFromDisk(2, cen, nor, rad);
-        //particleSystem.updateParticles(dt, terrain);
+        stats.update(dt);
 
         flowLines.update(dt);
 
         controls.update();
 
-        requestAnimationFrame(render);
+        requestAnimationFrame(loop);
 
-        stats.end();
+        renderer.render( scene, camera );
     }
 
     function render() {
@@ -366,21 +367,19 @@
     }
 
     function clickSaveTerrain() {
-
         terrain.save("temp.json");
+    }
+
+    function clickLoadTerrain() {
 
     }
 
     function clickSaveLine() {
-
         flowLines.save("line.json");
-
     }
 
     function clickRefresh() {
-
         flowLines.updateTerrain(terrain);
-
     }
 
     function changeMode() {
@@ -412,6 +411,26 @@
 
     function changeRadian() {
 
+    }
+
+    function clickLogs() {
+
+        var data = '====== FPS Logs ===== \r\n';
+
+        for(var n=0; n<logs.length; n++) {
+
+            var perf = 1.0/logs[n] * 1000;
+            data += n.toString() + 'sec : ' + logs[n].toString() + 'fps, ' + perf.toString() + 'ms' + '\r\n';
+        }
+
+        var blob = new Blob([data], {type: "text/plain"});
+        var url  = URL.createObjectURL(blob);
+
+        var a = document.createElement('a');
+        a.download = 'log.txt';
+        a.href = url;
+
+        a.click();
     }
 
 </script>

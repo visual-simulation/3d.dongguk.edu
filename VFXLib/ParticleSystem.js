@@ -603,11 +603,13 @@ function ParticleSystem() {
 
             rtComposer.render();
 
+            worldScene.remove(screenMesh);
             worldScene.add(maskMesh);
-            {
-                renderer.render(worldScene, camera, maskTexture, true);
-            }
+
+            renderer.render(worldScene, camera, maskTexture, true);
+
             worldScene.remove(maskMesh);
+            worldScene.add(screenMesh);
         }
     }
 }
