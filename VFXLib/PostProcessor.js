@@ -67,22 +67,26 @@ function PostProcessor() {
     this.rain = function( _total ) {
 
         rainCanvas = canvas;
-        rainCanvas.width = window.innerWidth;
-        rainCanvas.height = window.innerHeight;
+//        rainCanvas.width = window.innerWidth;
+//        rainCanvas.height = window.innerHeight;
+
+
+        rainCanvas.width = 128;
+        rainCanvas.height = 128;
 
         rainContext = rainCanvas.getContext('2d');
 
         rainOptions = {
             opacity: 0.1,
             fps: 60,
-            gravityThreshold: 3,
+            gravityThreshold: 1,
             gravityAngle: Math.PI / 2,
             gravityAngleVariance: 0
         };
 
         PRIVATE_GRAVITY_FORCE_FACTOR_X = ((Math.PI / 2) - rainOptions.gravityAngle) * (rainOptions.fps * 0.001) / 50;
 
-        rainSeedSize = 10;
+        rainSeedSize = 3;
         rainSeedLife = 3;
 
         rainTotal = _total;

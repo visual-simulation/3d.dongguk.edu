@@ -221,7 +221,8 @@
         pps = new PostProcessor();
         rain = false;
         if(rain){
-            hudCanvas = pps.rainImage(100, imgNode);
+            //hudCanvas = pps.rainImage(100, imgNode);
+            hudCanvas = pps.rain(100);
         }else{
             hudCanvas = pps.snow( 100 );
         }
@@ -266,12 +267,13 @@
                 rain = false;
             }
             else {
-                //renderer.setClearColor(0xd7d7d7, 1);
+                renderer.setClearColor(0xd7d7d7, 1);
                 imgData = renderer.domElement.toDataURL();
                 imgNode = document.createElement('img');
                 imgNode.src = imgData;
                 cc = 0;
-                hudCanvas = pps.rainImage( 100, imgNode );
+                //hudCanvas = pps.rainImage( 100, imgNode );
+                hudCanvas = pps.rain(20);
                 rain = true;
             }
         }
@@ -435,7 +437,8 @@
         hudTexture.needsUpdate = true;
 
         if(rain){
-            pps.updateRainImage(cc++);
+            //pps.updateRainImage(cc++);
+            pps.updateRain(cc++);
         }
         else {
             pps.updateSnow(0.001, cc++);
