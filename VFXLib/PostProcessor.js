@@ -60,6 +60,10 @@ function PostProcessor() {
     var pre_y = 0;
     var pre_z = 0;
 
+    //steps
+    var currentStep = 0;
+    var stepOffset = 3;
+
     this.rain = function( _total ) {
 
         rainCanvas = canvas;
@@ -267,8 +271,11 @@ function PostProcessor() {
         crop = [0, 0, img.naturalWidth, img.naturalHeight];
 
         rainCanvas = canvas;
-        rainCanvas.width = window.innerWidth;
-        rainCanvas.height = window.innerHeight;
+//        rainCanvas.width = window.innerWidth;
+//        rainCanvas.height = window.innerHeight;
+
+        rainCanvas.width = 100;
+        rainCanvas.height = 100;
 
         width = img.clientWidth;
         height = img.clientHeight;
@@ -506,8 +513,11 @@ function PostProcessor() {
     this.snow = function( _total ) {
 
         snowCanvas = canvas;
-        snowCanvas.width = window.innerWidth;
-        snowCanvas.height = window.innerHeight;
+//      snowCanvas.width = window.innerWidth;
+//      snowCanvas.height = window.innerHeight;
+
+        snowCanvas.width = 128;
+        snowCanvas.height = 128;
 
         snowCtx = snowCanvas.getContext('2d');
 
@@ -548,7 +558,15 @@ function PostProcessor() {
             }
         }
 
-        _this.drawSnow(number);
+        currentStep++;
+
+        if(currentStep == stepOffset) {
+            _this.drawSnow(number);
+        }
+
+        if(currentStep > stepOffset) {
+            currentStep = 0;
+        }
     }
 
     this.addSnows = function( i, x, y ) {
@@ -573,11 +591,11 @@ function PostProcessor() {
         snowCtx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
 
         snowCtx.fillStyle = '#FFFAFA';
-        snowCtx.globalAlpha = 0.8;
+        snowCtx.globalAlpha = 0.5;
         snowCtx.shadowBlur = 0.1;
         snowCtx.shadowColor="white";
 
-        for(var i = 0; i < number; i++){
+        for(var i = 0; i < number/2; i++){
 
             var idx = i*2;
 
