@@ -47,6 +47,8 @@
 
 <script src="./PostProcessor.js"></script>
 
+<input type="button" value="Log file" onclick="clickLogs()">
+
 <script>
 
     if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
@@ -67,6 +69,11 @@
     var morph, morphs = [], mixer, animGroups = [];
 
     var light;
+
+
+    var frameTime = 0.0;
+    var frames = 0;
+    var logs = [];
 
     var clock = new THREE.Clock();
 
@@ -150,7 +157,7 @@
 
         stats = new Stats();
         stats.domElement.style.position = 'absolute';
-        stats.domElement.style.top = '0px';
+        stats.domElement.style.top = '30px';
         stats.domElement.style.zIndex = 100;
         container.appendChild( stats.domElement );
 
@@ -164,6 +171,7 @@
     }
 
     function onKeyDown(e) {
+
         if(e.keyCode == "69"){
             if(earthquake_state){
                 earthquake_state = pps.changeState(earthquake_state);
@@ -347,10 +355,30 @@
 
     function animate() {
 
+        var dt = clock.getDelta();
+
+        if(frameTime >= 1.0) {
+
+            var d = new Date();
+
+            var dString = d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + ' ';
+            dString += d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() + ' ';
+
+            logs.push({date:dString, frame:frames});
+
+            frameTime -= 1.0;
+            frames = 0;
+        }
+
+        frameTime += dt;
+        frames += 1;
+
+
+
         requestAnimationFrame( animate );
 
         render();
-        stats.update();
+        stats.update(dt);
 
     }
 
@@ -382,6 +410,35 @@
         renderer.clear();
         renderer.render( scene, camera );
 
+    }
+
+    function clickLogs() {
+
+        var data = '====== FPS Logs ===== \r\n';
+
+        for(var n=0; n<logs.length; n++) {
+
+            var perf = 1.0/logs[n].frame * 1000;
+
+            data += logs[n].date + ' ';
+            data += n.toString() + 'sec : ' + logs[n].frame.toString() + 'fps, ' + perf.toString() + 'ms' + '\r\n';
+        }
+
+        var blob = new Blob([data], {type: "text/plain"});
+        var url  = URL.createObjectURL(blob);
+
+        var a = document.createElement('a');
+
+        a.click = function() {
+            var evt = this.ownerDocument.createEvent('MouseEvents');
+            evt.initMouseEvent('click', true, true, this.ownerDocument.defaultView, 1, 0, 0, 0, 0, false, false, false, false, 0, null);
+            this.dispatchEvent(evt);
+        }
+
+        a.download = 'log.txt';
+        a.href = url;
+
+        a.click();
     }
 
 </script>
