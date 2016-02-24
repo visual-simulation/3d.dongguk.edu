@@ -217,9 +217,9 @@
         // TEXT
 
         var loader = new THREE.FontLoader();
-        loader.load( 'lib/three/examples/fonts/helvetiker_bold.typeface.js', function ( font ) {
+        loader.load( './fonts/helvetiker_bold.typeface.json', function ( font ) {
 
-            var textGeo = new THREE.TextGeometry( "THREE.JS", {
+            var textGeo = new THREE.TextGeometry( "Dongguk", {
 
                 font: font,
 
@@ -240,7 +240,7 @@
 
             var mesh = new THREE.Mesh( textGeo, textMaterial );
             mesh.position.x = centerOffset;
-            mesh.position.y = FLOOR + 67;
+            mesh.position.y = FLOOR + 120;
 
             mesh.castShadow = true;
             mesh.receiveShadow = true;
@@ -339,7 +339,7 @@
 
         var loader = new THREE.JSONLoader();
 
-        loader.load( "lib/three/examples/models/animated/horse.js", function( geometry ) {
+        loader.load( "./models/horse.json", function( geometry ) {
 
             for ( var i = - 400; i < 400; i += 8 ) {
 
@@ -355,7 +355,9 @@
 
     function animate() {
 
-        var dt = clock.getDelta();
+        var delta = clock.getDelta();
+        var dt = delta;
+
 
         if(frameTime >= 1.0) {
 
@@ -373,18 +375,6 @@
         frameTime += dt;
         frames += 1;
 
-
-
-        requestAnimationFrame( animate );
-
-        render();
-        stats.update(dt);
-
-    }
-
-    function render() {
-
-        var delta = clock.getDelta();
 
         if ( mixer ) mixer.update( delta );
 
@@ -406,6 +396,15 @@
             camera = pps.earthquake(camera, 80, 100, 10);
         }
         controls.update( delta );
+
+        requestAnimationFrame( animate );
+
+        render();
+        stats.update(dt);
+
+    }
+
+    function render() {
 
         renderer.clear();
         renderer.render( scene, camera );
